@@ -1,0 +1,147 @@
+_message_before_copy: |
+  This template will create a new repository for deploying IOCs and services to
+  a Kubernetes cluster. Each repository represents a collection of IOCs and
+  services that are deployed to *the same cluster* and usually the same namespace.
+  The grouping of the IOCs and services can be arbitrary, e.g. by beamline,
+  location, technical area, maintainer etc.
+
+_subdirectory: "template"
+
+_preserve_symlinks: true
+
+_tasks:
+  - git init --initial-branch=main
+  # Add the remote if it doesn't exist
+  - if ! git remote | grep origin; then git remote add origin {{repo_uri}}; fi
+
+type:
+  type: str
+  help: Where are you deploying these IOCs and services?
+  choices:
+    beamline:
+    accelerator:
+    lab:
+    other:
+  default: beamline
+
+beamline:
+  type: str
+  help: |
+    Short name for the beamline, e.g. "bl47p", "bl20j", "bl21i"
+  validator: >-
+    {% if not (beamline | regex_search('^[a-z][a-z-0-9]+$')) %}
+    {{beamline}} must be alphanumeric and start with a letter,
+    it may contain hyphens
+    {% endif %}
+  when: >-
+    {% if type == 'beamline' %}true{% endif %}
+  default: bl01t
+
+ioc_group:
+  type: str
+  help: Short name for the collection of IOCs in this repo.
+  placeholder: e.g. "VA", "PS"
+  validator: >-
+    {% if not (ioc_group | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
+    {{ioc_group}} must be alphanumeric plus hyphens and start with a letter.
+    {% endif %}
+  when: >-
+    {% if type != 'beamline' -%}true{%- endif %}
+
+description:
+  type: str
+  help: A One line description of the module
+  default: >-
+    {{- type }} {{ beamline or ioc_group }} IOC Instances and Services
+
+location:
+  type: str
+  help: Default location where these IOCs and services will run.
+  placeholder: e.g. "SR01". Leave blank to configure per IOC.
+  validator: >-
+    {% if not (ioc_group | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
+    {{ioc_group}} must be alphanumeric and start with a letter, it may contain hyphens
+    {% endif %}
+  when: >-
+    {% if type != 'beamline' %}true{% endif %}
+
+cluster_namespace:
+  type: str
+  help: Cluster namespace e.g. p38-iocs, j20-iocs, p47-iocs
+  validator: >-
+    {% if not (cluster_namespace | regex_search('^[a-z][a-z-0-9]+$')) %}
+    {{cluster_namespace}} must be lower case alphanumeric and start with a letter,
+    it may contain hyphens
+    {% endif %}
+
+cluster_name:
+  type: str
+  help: Name of the cluster where the IOCs and services in this repository will run
+  placeholder: k8s-p38, k8s-i20-1, pollux, etc.
+  validator: >-
+    {% if not (cluster_name | regex_search('^[a-z][a-z-0-9]+$')) %}
+    {{cluster_name}} must be lower case alphanumeric and start with a letter,
+    it may contain hyphens
+    {% endif -%}
+
+cluster_type:
+  type: str
+  help: This controls how the `environment.sh` script connects to the cluster.
+  choices:
+    DLS Dedicated Cluster: dls_dedicated
+    Shared Cluster (inc accelerator): dls_shared
+    Other Shared: shared
+    Other Dedicated: dedicated
+  default: dls_dedicated
+
+node_type:
+  type: str
+  help: Add node-type tolerations for the target hosts' node type
+  when: >-
+    {% if 'shared' in cluster_type %}true{% endif %}
+  choices:
+    training-rig:
+    test-rig:
+    None: ""
+    other: TODO add your Node Type toleration here
+  default: ""
+
+git_platform:
+  type: str
+  help: Git platform hosting the repository.
+  placeholder: For missing platform override repo_uri, or add your own in a PR.
+  choices:
+    - github.com
+    - gitlab.diamond.ac.uk
+
+github_org:
+  type: str
+  help: The GitHub organisation that will contain this repo.
+  placeholder: e.g. your own GitHub account or epics-containers
+  when: >-
+    {{ git_platform == 'github.com' }}
+  validator: >-
+    {% if not (github_org | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
+    {{github_org}} must be lower case AlphaNumeric and start with a letter,
+    it may contain hyphens
+    {% endif -%}
+
+repo_uri:
+  type: str
+  help: Remote URI of the repository.
+  default: >-
+    {% if git_platform == 'gitlab.diamond.ac.uk' -%}
+    git@{{git_platform}}:controls/containers/{{type}}/{{beamline or ioc_group}}.git
+    {%- else -%}
+    git@{{git_platform}}:{{github_org}}/{{beamline or ioc_group}}.git
+    {%- endif %}
+
+logging_url:
+  type: str
+  help: URL for centralized logging.
+  placeholder: add your own in a PR if you wish or edit environment.sh after copying
+  choices:
+    DLS: https://graylog2.diamond.ac.uk/search?rangetype=relative&fields=message%2Csource&width=1489&highlightMessage=&relative=172800&q=pod_name%3A{service_name}*
+    Other: "TODO: add your logging URL here"
+    None: ""
+  default: https://graylog2.diamond.ac.uk/search?rangetype=relative&fields=message%2Csource&width=1489&highlightMessage=&relative=172800&q=pod_name%3A{service_name}*

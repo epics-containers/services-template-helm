@@ -1,0 +1,14 @@
+epics-pvcs:
+{% if type != 'beamline' %}
+  # the location where the IOCs will run - same as beamline for beamlines
+  location: {{ location }}
+  # the name of the repository in which the IOC is grouped
+  ioc_group: {{ ioc_group }}
+{% else %}
+  # the beamline name - only set for beamlines
+  beamline: {{ beamline }}
+  # the location where the IOCs will run - same as beamline for beamlines
+  ioc_group: {{ beamline }}
+  # the name of the repository in which the IOC is grouped
+  location: {{ beamline }}
+{%- endif %}

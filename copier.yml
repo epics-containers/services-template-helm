@@ -1,9 +1,9 @@
 _message_before_copy: |
-  This template will create a new repository for deploying IOCs and services to
-  a Kubernetes cluster. Each repository represents a collection of IOCs and
-  services that are deployed to *the same cluster* and usually the same namespace.
-  The grouping of the IOCs and services can be arbitrary, e.g. by beamline,
-  location, technical area, maintainer etc.
+  This template will create a new repository which describes the Kubernetes configuration
+  of a set of containerised IOCs and services. Each repository represents a
+  collection of IOCs and services that are deployed to *the same cluster* and usually
+  the same namespace. The grouping of the IOCs and services can be arbitrary, e.g. by
+  beamline, location, technical area, maintainer etc.
 
 _subdirectory: "template"
 

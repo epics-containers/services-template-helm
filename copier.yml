@@ -131,9 +131,9 @@ repo_uri:
   help: Remote URI of the repository.
   default: >-
     {% if git_platform == 'gitlab.diamond.ac.uk' -%}
-    git@{{git_platform}}:controls/containers/{{type}}/{{beamline or ioc_group}}.git
+    git@{{git_platform}}:controls/containers/{{type}}/{{beamline or ioc_group}}-services.git
     {%- else -%}
-    git@{{git_platform}}:{{github_org}}/{{beamline or ioc_group}}.git
+    git@{{git_platform}}:{{github_org}}/{{beamline or ioc_group}}-services.git
     {%- endif %}
 
 logging_url:

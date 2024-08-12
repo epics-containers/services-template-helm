@@ -4,11 +4,7 @@ global:
   beamline: {{ beamline }}
   enabled: true
 
-# ioc-instance:
-#   resources:
-#     limits:
-#       cpu: 500m
-#       memory: 1Gi
-#     requests:
-#       cpu: 100m
-#       memory: 128Mi
+ioc-instance:
+  # useHostNetwork - use host network for IOC - required for Channel Access
+  # to work outside of the cluster
+  hostNetwork: false

@@ -9,65 +9,25 @@ _subdirectory: "template"
 
 _preserve_symlinks: true
 
-_tasks:
-  - git init --initial-branch=main
-  # Add the remote if it doesn't exist
-  - if ! git remote | grep origin; then git remote add origin {{repo_uri}}; fi
-
-type:
-  type: str
-  help: Where are you deploying these IOCs and services?
-  choices:
-    beamline:
-    accelerator:
-    lab:
-    other:
-  default: beamline
-
-beamline:
-  type: str
-  help: |
-    Short name for the beamline, e.g. "bl47p", "bl20j", "bl21i"
-  validator: >-
-    {% if not (beamline | regex_search('^[a-z][a-z-0-9]+$')) %}
-    {{beamline}} must be alphanumeric and start with a letter,
-    it may contain hyphens
-    {% endif %}
-  when: >-
-    {% if type == 'beamline' %}true{% endif %}
-  default: bl01t
-
 ioc_group:
   type: str
-  help: Short name for the collection of IOCs in this repo.
-  placeholder: e.g. "VA", "PS"
+  help: Short name for the collection of services.
+  placeholder: e.g. "bl01t", "VA", "PS"
   validator: >-
     {% if not (ioc_group | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
     {{ioc_group}} must be alphanumeric plus hyphens and start with a letter.
     {% endif %}
-  when: >-
-    {% if type != 'beamline' -%}true{%- endif %}
 
 description:
   type: str
   help: A One line description of the module
   default: >-
-    {{- type }} {{ beamline or ioc_group }} IOC Instances and Services
-
-location:
-  type: str
-  help: Default location where these IOCs and services will run.
-  placeholder: e.g. "SR01". Leave blank to configure per IOC.
-  validator: >-
-    {% if not (ioc_group | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
-    {{ioc_group}} must be alphanumeric and start with a letter, it may contain hyphens
-    {% endif %}
-  when: >-
-    {% if type != 'beamline' %}true{% endif %}
+    {{ ioc_group }} IOC Instances and Services
 
 cluster_namespace:
   type: str
-  help: Cluster namespace e.g. p38-iocs, j20-iocs, p47-iocs
+  help: Kubernetes cluster namespace
+  placeholder: e.g. "bl01t-beamline", "j20-beamline", "p47-beamline"
   validator: >-
     {% if not (cluster_namespace | regex_search('^[a-z][a-z-0-9]+$')) %}
     {{cluster_namespace}} must be lower case alphanumeric and start with a letter,
@@ -76,40 +36,34 @@ cluster_namespace:
 
 cluster_name:
   type: str
-  help: Name of the cluster where the IOCs and services in this repository will run
-  placeholder: k8s-p38, k8s-i20-1, pollux, etc.
+  help: Name of the k8s cluster where the IOCs and services in this repository will run
+  placeholder: e.g. "k8s-p38", "k8s-i20-1", "pollux"
   validator: >-
     {% if not (cluster_name | regex_search('^[a-z][a-z-0-9]+$')) %}
     {{cluster_name}} must be lower case alphanumeric and start with a letter,
     it may contain hyphens
-    {% endif -%}
+    {% endif %}
 
 cluster_type:
   type: str
-  help: This controls how the `environment.sh` script connects to the cluster.
+  help: Cluster specific details. For missing platform override cluster_type, or add your own in a PR.
   choices:
-    DLS Dedicated Cluster: dls_dedicated
-    Shared Cluster (inc accelerator): dls_shared
-    Other Shared: shared
-    Other Dedicated: dedicated
-  default: dls_dedicated
+    DLS Cluster: dls_cluster
+    Unspecified: unspecified
 
-node_type:
+location:
   type: str
-  help: Add node-type tolerations for the target hosts' node type
-  when: >-
-    {% if 'shared' in cluster_type %}true{% endif %}
-  choices:
-    training-rig:
-    test-rig:
-    None: ""
-    other: TODO add your Node Type toleration here
-  default: ""
+  help: Default location where these IOCs and services will run. e.g. "bl01t", "SR01". Leave blank to configure per IOC.
+  default: >-
+    {{ ioc_group }}
+  validator: >-
+    {% if not (ioc_group | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
+    {{ioc_group}} must be alphanumeric and start with a letter, it may contain hyphens
+    {% endif %}
 
 git_platform:
   type: str
-  help: Git platform hosting the repository.
-  placeholder: For missing platform override repo_uri, or add your own in a PR.
+  help: Git platform hosting this repository. For missing platform override git_platform, or add your own in a PR.
   choices:
     - github.com
     - gitlab.diamond.ac.uk
@@ -126,22 +80,32 @@ github_org:
     it may contain hyphens
     {% endif -%}
 
+dls_technical_area:
+  type: str
+  help: The DLS technical area
+  when: >-
+    {{ git_platform == 'gitlab.diamond.ac.uk' }}
+  validator: >-
+    {% if not (github_org | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
+    {{github_org}} must be lower case AlphaNumeric and start with a letter,
+    it may contain hyphens
+    {% endif -%}
+  choices:
+    - beamline
+    - accelerator
+
 repo_uri:
   type: str
-  help: Remote URI of the repository.
+  help: Remote URI of the services repository.
   default: >-
     {% if git_platform == 'gitlab.diamond.ac.uk' -%}
-    git@{{git_platform}}:controls/containers/{{type}}/{{beamline or ioc_group}}-services.git
+    https://{{git_platform}}/controls/containers/{{dls_technical_area}}/{{ioc_group}}-services
     {%- else -%}
-    git@{{git_platform}}:{{github_org}}/{{beamline or ioc_group}}-services.git
+    https://{{git_platform}}/{{github_org}}/{{ioc_group}}-services
     {%- endif %}
 
 logging_url:
   type: str
-  help: URL for centralized logging.
-  placeholder: add your own in a PR if you wish or edit environment.sh after copying
+  help: URL for centralized logging. For missing platform override logging_url, or add your own in a PR.
   choices:
-    DLS: https://graylog2.diamond.ac.uk/search?rangetype=relative&fields=message%2Csource&width=1489&highlightMessage=&relative=172800&q=pod_name%3A{service_name}*
-    Other: "TODO: add your logging URL here"
-    None: ""
-  default: https://graylog2.diamond.ac.uk/search?rangetype=relative&fields=message%2Csource&width=1489&highlightMessage=&relative=172800&q=pod_name%3A{service_name}*
+    - https://graylog2.diamond.ac.uk/search?rangetype=relative&fields=message%2Csource&width=1489&highlightMessage=&relative=172800&q=pod_name%3A{service_name}*

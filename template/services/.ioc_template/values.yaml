@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://github.com/epics-containers/ec-helm-charts/releases/download/3.4.4/ioc-instance.schema.json#/$defs/service
 ioc-instance:
-  image: replace_with_image_uri
+  image: REPLACE_WITH_IMAGE_URI
 
   # NOTE: the following are suggestions to help with debugging IOCs
   # 1. replace the runtime container with the developer version

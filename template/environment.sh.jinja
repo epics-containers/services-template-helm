@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # a bash script to source in order to set up your command line to in order
-# to work with the {{ beamline or ioc_group }} IOCs and Services.
+# to work with the {{ ioc_group}} IOCs and Services.
 
 # check we are sourced
 if [ "$0" = "$BASH_SOURCE" ]; then
@@ -9,7 +9,7 @@ if [ "$0" = "$BASH_SOURCE" ]; then
     exit 1
 fi
 
-echo "Loading environment for {{ type }} {{ beamline or ioc_group }} IOC Instances and Services ..."
+echo "Loading environment for {{ ioc_group}} IOC Instances and Services ..."
 
 #### SECTION 1. Environment variables ##########################################
 
@@ -35,7 +35,7 @@ source <(ec --show-completion ${SHELL})
 
 #### SECTION 3. Configure Kubernetes Cluster ###################################
 
-{% if cluster_type.startswith("dls_") %}
+{% if cluster_type == dls_cluster %}
 # the following configures kubernetes inside DLS.
 
 module unload {{ cluster_name }} > /dev/null

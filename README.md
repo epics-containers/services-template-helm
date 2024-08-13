@@ -31,3 +31,7 @@ cd into the project you wish to update and execute the following:
 ```bash
 copier update .
 ```
+
+# To tag a new version of the services repo
+git tag 2024.8.1
+git push origin 2024.8.1

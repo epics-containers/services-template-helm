@@ -11,7 +11,7 @@ _preserve_symlinks: true
 
 ioc_group:
   type: str
-  help: Short name for the collection of services.
+  help: Short name for this collection of services.
   placeholder: e.g. "t01", "VA", "PS"
   validator: >-
     {% if not (ioc_group | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}

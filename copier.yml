@@ -11,8 +11,8 @@ _preserve_symlinks: true
 
 ioc_group:
   type: str
-  help: Short name for the collection of services.
-  placeholder: e.g. "bl01t", "VA", "PS"
+  help: Short name for this collection of services.
+  placeholder: e.g. "t01", "VA", "PS"
   validator: >-
     {% if not (ioc_group | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
     {{ioc_group}} must be alphanumeric plus hyphens and start with a letter.
@@ -37,7 +37,7 @@ cluster_namespace:
 cluster_name:
   type: str
   help: Name of the k8s cluster where the IOCs and services in this repository will run
-  placeholder: e.g. "k8s-p38", "k8s-i20-1", "pollux"
+  placeholder: e.g. "k8s-p38", "k8s-i20-1", "pollux", "argus"
   validator: >-
     {% if not (cluster_name | regex_search('^[a-z][a-z-0-9]+$')) %}
     {{cluster_name}} must be lower case alphanumeric and start with a letter,

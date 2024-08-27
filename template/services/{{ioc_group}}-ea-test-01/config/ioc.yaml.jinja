@@ -17,6 +17,6 @@ entities:
 
   - type: epics.PostStartupCommand
     command: |
-      dbpf EXAMPLE:IBEK:A "2.54"
-      dbpf EXAMPLE:IBEK:B "2.61"
-      dbgf EXAMPLE:IBEK:SUM
+      dbpf {{ ioc_group| upper}}:IBEK:A "2.54"
+      dbpf {{ ioc_group| upper}}:IBEK:B "2.61"
+      dbgf {{ ioc_group| upper}}:IBEK:SUM

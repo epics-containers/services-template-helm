@@ -1,6 +1,6 @@
-# yaml-language-server: $schema=https://github.com/epics-containers/ioc-template/releases/download/2024.1.1/ibek.ioc.schema.json
+ yaml-language-server: $schema=https://github.com/epics-containers/ioc-adsimdetector/releases/download/2024.6.1/ibek.ioc.schema.json
 
-ioc_name: "{% raw %}{{ __utils__.get_env('IOC_NAME') }}{% endraw %}"
+ioc_name: "{% raw %}{{ _global.get_env('IOC_NAME') }}{% endraw %}"
 
 description: Generic instance for testing generic IOCs
 
@@ -15,14 +15,8 @@ entities:
   - type: epics.StartupCommand
     command: dbLoadRecords("/epics/ioc/config/ioc.db")
 
-  - type: epics.dbpf
-    pv: {{ ioc_group| upper}}:IBEK:A
-    value: "2.54"
-
-  - type: epics.dbpf
-    pv: {{ ioc_group| upper}}:IBEK:B
-    value: "2.61"
-
   - type: epics.PostStartupCommand
     command: |
-      dbgf {{ ioc_group| upper}}:IBEK:SUM
+      dbpf EXAMPLE:IBEK:A "2.54"
+      dbpf EXAMPLE:IBEK:B "2.61"
+      dbgf EXAMPLE:IBEK:SUM

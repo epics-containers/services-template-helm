@@ -85,11 +85,6 @@ dls_technical_area:
   help: The DLS technical area
   when: >-
     {{ git_platform == 'gitlab.diamond.ac.uk' }}
-  validator: >-
-    {% if not (github_org | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
-    {{github_org}} must be lower case AlphaNumeric and start with a letter,
-    it may contain hyphens
-    {% endif -%}
   choices:
     - beamline
     - accelerator

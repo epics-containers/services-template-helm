@@ -13,12 +13,24 @@ ID="${CI_COMMIT_SHORT_SHA:-"local"}"
 POD="bl01c-ci-${ID}-$(date +%s)"
 set -xe
 status=0
+mkdir -p ${ROOT}/.ci_work
 
 # use docker if available else use podman
 if ! docker version &>/dev/null; then docker=podman; else docker=docker; fi
 
-for service in ${ROOT}/services/*
+for service in ${ROOT}/services/*/  # */ to skip files
 do
+
+    ### Validate and lint each service chart ###
+    service_name=$(basename $service)
+    schema=$(cat ${service}/values.yaml | sed -rn 's/^# yaml-language-server: \$schema=(.*)/\1/p')
+    if [ -n "${schema}" ]; then
+        cp -r $service ${ROOT}/.ci_work/$service_name
+        echo "{\"\$ref\": \"$schema\"}" > ${ROOT}/.ci_work/$service_name/values.schema.json
+        helm lint ${ROOT}/.ci_work/$service_name --values ${ROOT}/services/values.yaml
+    fi
+
+    ### Valiate each ioc config ###
     # Skip if subfolder has no config to validate
     if [ ! -f "${service}/config/ioc.yaml" ]; then
         continue
@@ -43,5 +55,7 @@ do
 
     fi
 done
+
+rm -r ${ROOT}/.ci_work
 
 exit $status

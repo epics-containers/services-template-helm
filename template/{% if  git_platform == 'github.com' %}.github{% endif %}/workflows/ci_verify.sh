@@ -18,14 +18,15 @@ if ! docker version &>/dev/null; then docker=podman; else docker=docker; fi
 for service in ${ROOT}/services/*/  # */ to skip files
 do
 
-    ### Validate and lint each service chart ###
+    ### Lint each service chart and validate if schema given ###
     service_name=$(basename $service)
+    cp -r $service ${ROOT}/.ci_work/$service_name
     schema=$(cat ${service}/values.yaml | sed -rn 's/^# yaml-language-server: \$schema=(.*)/\1/p')
     if [ -n "${schema}" ]; then
-        cp -r $service ${ROOT}/.ci_work/$service_name
         echo "{\"\$ref\": \"$schema\"}" > ${ROOT}/.ci_work/$service_name/values.schema.json
-        helm lint ${ROOT}/.ci_work/$service_name --values ${ROOT}/services/values.yaml
     fi
+    helm dependency update ${ROOT}/.ci_work/$service_name
+    helm lint ${ROOT}/.ci_work/$service_name --values ${ROOT}/services/values.yaml
 
     ### Valiate each ioc config ###
     # Skip if subfolder has no config to validate

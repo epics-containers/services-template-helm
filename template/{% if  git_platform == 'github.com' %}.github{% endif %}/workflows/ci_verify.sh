@@ -10,12 +10,33 @@
 
 ROOT=$(realpath $(dirname ${0})/../..)
 set -xe
+rm -rf ${ROOT}/.ci_work/
+mkdir -p ${ROOT}/.ci_work
 
 # use docker if available else use podman
 if ! docker version &>/dev/null; then docker=podman; else docker=docker; fi
 
-for service in ${ROOT}/services/*
+for service in ${ROOT}/services/*/  # */ to skip files
 do
+
+    ### Lint each service chart and validate if schema given ###
+    service_name=$(basename $service)
+    cp -r $service ${ROOT}/.ci_work/$service_name
+    schema=$(cat ${service}/values.yaml | sed -rn 's/^# yaml-language-server: \$schema=(.*)/\1/p')
+    if [ -n "${schema}" ]; then
+        echo "{\"\$ref\": \"$schema\"}" > ${ROOT}/.ci_work/$service_name/values.schema.json
+    fi
+    $docker run --rm --entrypoint bash \
+        -v ${ROOT}/.ci_work/$service_name:/services/$service_name \
+        alpine/helm:3.14.3 \
+        -c "helm dependency update /services/$service_name"
+    $docker run --rm --entrypoint bash \
+        -v ${ROOT}/.ci_work/$service_name:/services/$service_name \
+        -v ${ROOT}/services/values.yaml:/services/values.yaml \
+        alpine/helm:3.14.3 \
+        -c "helm lint /services/$service_name --values /services/values.yaml"
+
+    ### Valiate each ioc config ###
     # Skip if subfolder has no config to validate
     if [ ! -f "${service}/config/ioc.yaml" ]; then
         continue
@@ -40,4 +61,7 @@ do
         cat  ${runtime}/st.cmd
 
     fi
+
 done
+
+rm -r ${ROOT}/.ci_work

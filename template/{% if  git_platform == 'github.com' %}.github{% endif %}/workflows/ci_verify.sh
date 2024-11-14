@@ -42,7 +42,7 @@ do
         alpine/helm:3.14.3 \
         -c "
            helm dependency update /services/$service_name &&
-           helm lint /services/$service_name --values /services/values.yaml &&
+           helm lint /services/$service_name --strict --values /services/values.yaml &&
            rm -rf /services/$service_name/charts
         "
 

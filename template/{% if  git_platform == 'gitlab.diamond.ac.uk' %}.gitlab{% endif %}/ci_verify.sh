@@ -8,28 +8,37 @@
 # other future services that don't use ibek, we will need to add a standard
 # entrypoint for validating the config folder mounted at /config.
 
-ROOT=$(realpath $(dirname ${0})/..)
+HERE=$(realpath $(dirname ${0}))
+ROOT=$(realpath ${HERE}/../..)
 ID="${CI_COMMIT_SHORT_SHA:-"local"}"
-POD="bl01c-ci-${ID}-$(date +%s)"
+POD="bl01c-ci-${ID}-$(date +%s)"  # Fix name
 set -xe
 status=0
+rm -rf ${ROOT}/.ci_work/
 mkdir -p ${ROOT}/.ci_work
 
-# use docker if available else use podman
-if ! docker version &>/dev/null; then docker=podman; else docker=docker; fi
+# copy the services to a temporary location to avoid dirtying the repo
+cp -r ${ROOT}/services/* ${ROOT}/.ci_work/
 
 for service in ${ROOT}/services/*/  # */ to skip files
 do
 
     ### Lint each service chart and validate if schema given ###
     service_name=$(basename $service)
-    cp -r $service ${ROOT}/.ci_work/$service_name
+
+    # skip services appearing in ci_skip_checks
+    checks=${HERE}/ci_skip_checks
+    if [[ -f ${checks} ]] && grep -q ${service_name} ${checks}; then
+        echo "Skipping ${service_name}"
+        continue
+    fi
+
     schema=$(cat ${service}/values.yaml | sed -rn 's/^# yaml-language-server: \$schema=(.*)/\1/p')
     if [ -n "${schema}" ]; then
         echo "{\"\$ref\": \"$schema\"}" > ${ROOT}/.ci_work/$service_name/values.schema.json
     fi
     helm dependency update ${ROOT}/.ci_work/$service_name
-    helm lint ${ROOT}/.ci_work/$service_name --values ${ROOT}/services/values.yaml
+    helm lint ${ROOT}/.ci_work/$service_name --strict --values ${ROOT}/services/values.yaml
 
     ### Valiate each ioc config ###
     # Skip if subfolder has no config to validate

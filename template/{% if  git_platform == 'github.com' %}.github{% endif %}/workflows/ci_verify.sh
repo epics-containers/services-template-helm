@@ -41,8 +41,8 @@ do
         -v ${ROOT}/.ci_work:/services \
         alpine/helm:3.14.3 \
         -c "
-           helm lint /services/$service_name --values /services/values.yaml &&
            helm dependency update /services/$service_name &&
+           helm lint /services/$service_name --values /services/values.yaml &&
            rm -rf /services/$service_name/charts
         "
 

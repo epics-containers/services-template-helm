@@ -1,9 +1,5 @@
 _message_before_copy: |
-  This template will create a new repository which describes the Kubernetes configuration
-  of a set of containerised IOCs and services. Each repository represents a
-  collection of IOCs and services that are deployed to *the same cluster* and usually
-  the same namespace. The grouping of the IOCs and services can be arbitrary, e.g. by
-  beamline, location, technical area, maintainer etc.
+  This template will create a new repository which describes the Kubernetes configuration for IOC and service instances. Each repository represents a group of IOCs and services that are deployed to *the same cluster* and the *same namespace*. The grouping can be arbitrary, e.g. by beamline, location, technical area, maintainer etc.
 
 _subdirectory: "template"
 
@@ -11,8 +7,8 @@ _preserve_symlinks: true
 
 ioc_group:
   type: str
-  help: Short name for this collection of services.
-  placeholder: e.g. "t01", "VA", "PS"
+  help: A name for this group of IOC and service instances. At DLS this should be the short beamline name or the technical area for accelerator repos.
+  placeholder: e.g. "i16", "b01-1", "p47" "vacuum"
   validator: >-
     {% if not (ioc_group | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
     {{ioc_group}} must be alphanumeric plus hyphens and start with a letter.
@@ -26,8 +22,8 @@ description:
 
 cluster_namespace:
   type: str
-  help: Kubernetes cluster namespace
-  placeholder: e.g. "bl01t-beamline", "j20-beamline", "p47-beamline"
+  help: Kubernetes namespace in which the IOCs and services will run.
+  placeholder: e.g. "i16-beamline", "b01-1-beamline", "p47-beamline", "accelerator"
   validator: >-
     {% if not (cluster_namespace | regex_search('^[a-z][a-z-0-9]+$')) %}
     {{cluster_namespace}} must be lower case alphanumeric and start with a letter,
@@ -36,8 +32,8 @@ cluster_namespace:
 
 cluster_name:
   type: str
-  help: Name of the k8s cluster where the IOCs and services in this repository will run
-  placeholder: e.g. "k8s-p38", "k8s-i20-1", "pollux", "argus"
+  help: Name of the Kubernetes cluster where the IOCs and services in this repository will run
+  placeholder: e.g. "k8s-i16", "k8s-b01-1", "pollux", "acastus"
   validator: >-
     {% if not (cluster_name | regex_search('^[a-z][a-z-0-9]+$')) %}
     {{cluster_name}} must be lower case alphanumeric and start with a letter,
@@ -46,14 +42,15 @@ cluster_name:
 
 cluster_type:
   type: str
-  help: Apply cluster specific details. For missing platform override cluster_type, or add your own in a PR.
+  help: Apply cluster specific details. To add to this list make a PR to services-template-helm.
   choices:
     Skip: ""
     DLS Cluster: dls_cluster
+  default: dls_cluster
 
 location:
   type: str
-  help: Default location where these IOCs and services will run. e.g. "bl01t", "SR01". Leave blank to configure per IOC.
+  help: Default location where these IOCs and services will run. At DLS this should be beamline shortname or blank for the accelerator.
   default: >-
     {{ ioc_group }}
   validator: >-
@@ -63,7 +60,7 @@ location:
 
 git_platform:
   type: str
-  help: Git platform hosting this repository. For missing platform override git_platform, or add your own in a PR.
+  help: Git platform hosting this repository. To add to this list make a PR to services-template-helm.
   choices:
     - github.com
     - gitlab.diamond.ac.uk
@@ -101,7 +98,8 @@ repo_uri:
 
 logging_url:
   type: str
-  help: URL for centralized logging. For missing platform override logging_url, or add your own in a PR.
+  help: URL for centralized logging. Leave blank if not applicable.
   choices:
     Skip: ""
-    DLS: https://graylog2.diamond.ac.uk/search?rangetype=relative&fields=message%2Csource&width=1489&highlightMessage=&relative=172800&q=pod_name%3A{service_name}*
+    DLS GrayLog: https://graylog2.diamond.ac.uk/search?rangetype=relative&fields=message%2Csource&width=1489&highlightMessage=&relative=172800&q=pod_name%3A{service_name}*
+  default: https://graylog2.diamond.ac.uk/search?rangetype=relative&fields=message%2Csource&width=1489&highlightMessage=&relative=172800&q=pod_name%3A{service_name}*

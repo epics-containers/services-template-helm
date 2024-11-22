@@ -1,6 +1,7 @@
 _message_before_copy: |
   This template will create a new repository which describes the Kubernetes configuration for IOC and service instances. Each repository represents a group of IOCs and services that are deployed to *the same cluster* and the *same namespace*. The grouping can be arbitrary, e.g. by beamline, location, technical area, maintainer etc.
 
+# minimum version for new style of migrations
 _min_copier_version: "9.3.0"
 
 _migrations:
@@ -9,6 +10,9 @@ _migrations:
     # introduce the symlinked folders to every IOC in the repo
     command: |
       echo "Migrating $(pwd) to Template v${VERSION_CURRENT}"
+
+      # remove templates to avoid symlink over existing folder copier bug
+      rm -rf services/.ioc_template/templates
 
       for i in $(grep -l ioc-instance services/*/Chart.yaml); do
           ioc=$(dirname $i)

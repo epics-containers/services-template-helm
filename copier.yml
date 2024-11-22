@@ -3,14 +3,13 @@ _message_before_copy: |
 
 _migrations:
   - version: 4.0.3
-    when: true
+    when: "{{ _stage == 'before' }}"
     # introduce the symlinked folders to every IOC in the repo
     command: |
       echo "Migrating $(pwd) to Template v${VERSION_CURRENT}"
 
       for i in $(grep -l ioc-instance services/*/Chart.yaml); do
           ioc=$(dirname $i)
-          echo "Migrating $ioc"
           rm -rf $ioc/templates
           ln -srfn .helm-shared/templates $ioc/templates
           ln -srfn .helm-shared/Chart.yaml $ioc/Chart.yaml

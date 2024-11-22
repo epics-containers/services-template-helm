@@ -3,7 +3,7 @@ _message_before_copy: |
 
 _migrations:
   - invoke -r {{ _copier_conf.src_path }} -c migrations migrate $STAGE $VERSION_FROM $VERSION_TO
-  - version: 4.0.3
+  - version: "4.0.3"
     when: "{{ _stage == 'before' }}"
     # introduce the symlinked folders to every IOC in the repo
     command: |

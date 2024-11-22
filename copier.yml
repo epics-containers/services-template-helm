@@ -1,6 +1,36 @@
 _message_before_copy: |
   This template will create a new repository which describes the Kubernetes configuration for IOC and service instances. Each repository represents a group of IOCs and services that are deployed to *the same cluster* and the *same namespace*. The grouping can be arbitrary, e.g. by beamline, location, technical area, maintainer etc.
 
+# minimum version for new style of migrations
+_min_copier_version: "9.3.0"
+
+_migrations:
+  - version: 4.0.3b3
+    when: "{{ _stage == 'before' }}"
+    # introduce the symlinked folders to every IOC in the repo
+    command: |
+      echo "Migrating $(pwd) to Template v${VERSION_CURRENT}"
+
+      # move templates to avoid 'symlink over existing folder' copier bug
+      mv services/.ioc_template/templates .backup-templates
+      ls .backup-templates
+
+      # update all iocs (using chart ioc-instance) to use the shared boilerplate
+      for i in $(grep -l ioc-instance services/*/Chart.yaml); do
+          ioc=$(dirname $i)
+          rm -rf $ioc/templates
+          ln -srfn .helm-shared/templates $ioc/templates
+          ln -srfn .helm-shared/Chart.yaml $ioc/Chart.yaml
+      done
+
+  - version: 4.0.3b3
+    when: "{{ _stage == 'after' }}"
+    # restore templates file to the shared boilerplate folder
+    command: |
+      # copier honours deletion of templates folder above so we must restore it
+      rm -rf .helm-shared/templates
+      mv .backup-templates .helm-shared/templates
+
 _subdirectory: "template"
 
 _preserve_symlinks: true

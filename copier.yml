@@ -1,9 +1,35 @@
 _message_before_copy: |
-  This template will create a new repository which describes the Kubernetes configuration
-  of a set of containerised IOCs and services. Each repository represents a
-  collection of IOCs and services that are deployed to *the same cluster* and usually
-  the same namespace. The grouping of the IOCs and services can be arbitrary, e.g. by
-  beamline, location, technical area, maintainer etc.
+  This template will create a new repository which describes the Kubernetes configuration for IOC and service instances. Each repository represents a group of IOCs and services that are deployed to *the same cluster* and the *same namespace*. The grouping can be arbitrary, e.g. by beamline, location, technical area, maintainer etc.
+
+# minimum version for new style of migrations
+_min_copier_version: "9.3.0"
+
+_migrations:
+  - version: 4.0.3b3
+    when: "{{ _stage == 'before' }}"
+    # introduce the symlinked folders to every IOC in the repo
+    command: |
+      echo "Migrating $(pwd) to Template v${VERSION_CURRENT}"
+
+      # move templates to avoid 'symlink over existing folder' copier bug
+      mv services/.ioc_template/templates .backup-templates
+      ls .backup-templates
+
+      # update all iocs (using chart ioc-instance) to use the shared boilerplate
+      for i in $(grep -l ioc-instance services/*/Chart.yaml); do
+          ioc=$(dirname $i)
+          rm -rf $ioc/templates
+          ln -srfn .helm-shared/templates $ioc/templates
+          ln -srfn .helm-shared/Chart.yaml $ioc/Chart.yaml
+      done
+
+  - version: 4.0.3b3
+    when: "{{ _stage == 'after' }}"
+    # restore templates file to the shared boilerplate folder
+    command: |
+      # copier honours deletion of templates folder above so we must restore it
+      rm -rf .helm-shared/templates
+      mv .backup-templates .helm-shared/templates
 
 _subdirectory: "template"
 
@@ -11,8 +37,13 @@ _preserve_symlinks: true
 
 ioc_group:
   type: str
-  help: Short name for this collection of services.
-  placeholder: e.g. "t01", "VA", "PS"
+  help: |
+    A name for this group of IOC and service instances.
+
+       At DLS this should be the short beamline name or the technical area
+       for accelerator repos.
+
+  placeholder: e.g. "i16", "b01-1", "p47" "vacuum"
   validator: >-
     {% if not (ioc_group | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
     {{ioc_group}} must be alphanumeric plus hyphens and start with a letter.
@@ -24,36 +55,12 @@ description:
   default: >-
     {{ ioc_group }} IOC Instances and Services
 
-cluster_namespace:
-  type: str
-  help: Kubernetes cluster namespace
-  placeholder: e.g. "bl01t-beamline", "j20-beamline", "p47-beamline"
-  validator: >-
-    {% if not (cluster_namespace | regex_search('^[a-z][a-z-0-9]+$')) %}
-    {{cluster_namespace}} must be lower case alphanumeric and start with a letter,
-    it may contain hyphens
-    {% endif %}
-
-cluster_name:
-  type: str
-  help: Name of the k8s cluster where the IOCs and services in this repository will run
-  placeholder: e.g. "k8s-p38", "k8s-i20-1", "pollux", "argus"
-  validator: >-
-    {% if not (cluster_name | regex_search('^[a-z][a-z-0-9]+$')) %}
-    {{cluster_name}} must be lower case alphanumeric and start with a letter,
-    it may contain hyphens
-    {% endif %}
-
-cluster_type:
-  type: str
-  help: Apply cluster specific details. For missing platform override cluster_type, or add your own in a PR.
-  choices:
-    Skip: ""
-    DLS Cluster: dls_cluster
-
 location:
   type: str
-  help: Default location where these IOCs and services will run. e.g. "bl01t", "SR01". Leave blank to configure per IOC.
+  help: |
+    Default location where these IOCs and services will run.
+
+       At DLS this should be beamline shortname or blank for the accelerator.
   default: >-
     {{ ioc_group }}
   validator: >-
@@ -61,9 +68,50 @@ location:
     {{ioc_group}} must be alphanumeric and start with a letter, it may contain hyphens
     {% endif %}
 
+cluster_name:
+  type: str
+  help: |
+    The Kubernetes cluster where the IOCs and services will run.
+
+       At DLS this should be "k8s-{beamline shortname}", "acastus" for the
+       accelerator or "pollux" for test beamlines.
+  placeholder: e.g. "k8s-i16", "k8s-b01-1", "pollux", "acastus"
+  validator: >-
+    {% if not (cluster_name | regex_search('^[a-z][a-z-0-9]+$')) %}
+    {{cluster_name}} must be lower case alphanumeric and start with a letter,
+    it may contain hyphens
+    {% endif %}
+
+cluster_namespace:
+  type: str
+  help: |
+    Kubernetes namespace in which the IOCs and services will run.
+
+       At DLS this should be "{beamline shortname}-beamline" or "accelerator".
+  placeholder: e.g. "i16-beamline", "b01-1-beamline", "p47-beamline", "accelerator"
+  validator: >-
+    {% if not (cluster_namespace | regex_search('^[a-z][a-z-0-9]+$')) %}
+    {{cluster_namespace}} must be lower case alphanumeric and start with a letter,
+    it may contain hyphens
+    {% endif %}
+
+cluster_type:
+  type: str
+  help: |
+    Apply cluster specific details.
+
+       To add to this list make a PR to services-template-helm.
+  choices:
+    Skip: ""
+    DLS Cluster: dls_cluster
+  default: dls_cluster
+
 git_platform:
   type: str
-  help: Git platform hosting this repository. For missing platform override git_platform, or add your own in a PR.
+  help: |
+    Git platform hosting this repository.
+
+       To add to this list make a PR to services-template-helm.
   choices:
     - github.com
     - gitlab.diamond.ac.uk
@@ -82,7 +130,7 @@ github_org:
 
 dls_technical_area:
   type: str
-  help: The DLS technical area
+  help: The DLS gitlab subfolder for this repo.
   when: >-
     {{ git_platform == 'gitlab.diamond.ac.uk' }}
   choices:
@@ -101,7 +149,8 @@ repo_uri:
 
 logging_url:
   type: str
-  help: URL for centralized logging. For missing platform override logging_url, or add your own in a PR.
+  help: URL for centralized logging. Leave blank if not applicable.
   choices:
     Skip: ""
-    DLS: https://graylog2.diamond.ac.uk/search?rangetype=relative&fields=message%2Csource&width=1489&highlightMessage=&relative=172800&q=pod_name%3A{service_name}*
+    DLS GrayLog: https://graylog2.diamond.ac.uk/search?rangetype=relative&fields=message%2Csource&width=1489&highlightMessage=&relative=172800&q=pod_name%3A{service_name}*
+  default: https://graylog2.diamond.ac.uk/search?rangetype=relative&fields=message%2Csource&width=1489&highlightMessage=&relative=172800&q=pod_name%3A{service_name}*

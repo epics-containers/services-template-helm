@@ -14,8 +14,13 @@ set -xe
 rm -rf ${ROOT}/.ci_work/
 mkdir -p ${ROOT}/.ci_work
 
-# use docker if available else use podman
-if ! docker version &>/dev/null; then docker=podman; else docker=docker; fi
+# if a docker provider is specified, use it
+if [[ $DOCKER_PROVIDER ]]; then
+    docker=$DOCKER_PROVIDER
+# Otherwise use docker if available else use podman
+else
+    if ! docker version &>/dev/null; then docker=podman; else docker=docker; fi
+fi
 
 # copy the services to a temporary location to avoid dirtying the repo
 cp -r ${ROOT}/services/* ${ROOT}/.ci_work/

@@ -8,8 +8,7 @@
 # other future services that don't use ibek, we will need to add a standard
 # entrypoint for validating the config folder mounted at /config.
 
-HERE=$(realpath $(dirname ${0}))
-ROOT=$(realpath ${HERE}/../..)
+ROOT=$(realpath $(dirname ${0}))
 set -xe
 rm -rf ${ROOT}/.ci_work/
 mkdir -p ${ROOT}/.ci_work
@@ -31,7 +30,7 @@ do
     service_name=$(basename $service)
 
     # skip services appearing in .ci_skip_checks
-    checks=${HERE}/.ci_skip_checks
+    checks=${ROOT}/.ci_skip_checks
     if [[ -f ${checks} ]] && grep -q ${service_name} ${checks}; then
         echo "Skipping ${service_name}"
         continue

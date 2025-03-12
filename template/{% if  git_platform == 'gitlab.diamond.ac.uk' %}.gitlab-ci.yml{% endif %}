@@ -4,7 +4,11 @@ stages:
 verify:
   stage: verify
   tags:
-    - controls,k8s
-  image: bitnami/kubectl:latest
+    - epics-containers
+    - argus
+  image: python:3.11
+  variables:
+    DOCKER_PROVIDER: kodman
   script:
-    - bash ./.gitlab/ci_verify.sh
+    - pip install git+https://github.com/epics-containers/Kodman  # https://github.com/epics-containers/Kodman/issues/37
+    - bash ci_verify.sh

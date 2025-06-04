@@ -147,6 +147,32 @@ repo_uri:
     https://{{git_platform}}/{{github_org}}/{{ioc_group}}-services
     {%- endif %}
 
+athena_services:
+  help: Athena services to be included in this repository. Leave blank if not applicable.
+  default: []
+  type: str
+  multiselect: true 
+  choices:
+    - rabbitmq
+    - blueapi
+    - nexus
+
+instrument:
+  type: str
+  help: |
+    A short name, which is used in the "NXInstrument" in produced NeXus files (if enabled)
+      and as a prefix for the names of services to ensure uniqueness.
+      Typically we use the instrument short name.
+      e.g. "i22", "b16", "i03-1", "SWIFT"
+  default: >-
+    {{ ioc_group }}
+  validator: >-
+    {% if not (instrument | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
+    {{instrument}} must be alphanumeric plus hyphens and start with a letter.
+    {% endif %}
+  when: >-
+    {{ athena_services != [] }}
+
 logging_url:
   type: str
   help: URL for centralized logging. Leave blank if not applicable.

@@ -1,0 +1,30 @@
+rabbitmq:
+  auth:
+    username: {{ beamline }}
+    existingPasswordSecret: rabbitmq-secrets
+    existingErlangSecret: rabbitmq-secrets
+  extraPlugins: rabbitmq_jms_topic_exchange,rabbitmq_stomp
+  persistence:
+    enabled: false
+  initScriptsCM: rabbitmq-init
+  rbac:
+    create: false
+  serviceAccount:
+    create: false
+    name: default-full-access-mounted # TODO: use only required permissions
+  extraContainerPorts:
+    - name: stomp
+      containerPort: 61613
+  service:
+    type: LoadBalancer
+    # loadBalancerIP: <loadBalancerIP> 
+    extraPorts:
+      - name: stomp
+        port: 61613
+        targetPort: stomp
+  metrics:  # TODO: Enable monitoring stack in namespace
+    enabled: true
+    podAnnotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/path: /metrics
+      prometheus.io/port: "8080"

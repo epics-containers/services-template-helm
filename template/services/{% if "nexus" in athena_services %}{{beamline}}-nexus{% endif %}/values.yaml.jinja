@@ -1,0 +1,59 @@
+nexus-file-converter:
+  debug:
+    enabled: true
+    suspend: false
+  beamline: {{ beamline }}
+  template:
+    entry/:
+      NX_class@: NXentry
+      instrument/:
+        NX_class@: NXinstrument
+        name: {{ beamline }}
+
+  volumes:
+  - name: nexus-template
+    configMap:
+      name: nexus-template
+      items:
+      - key: template.yaml
+        path: template.yaml
+  - name: nexus-data
+    hostPath:
+      path: /dls/{{ beamline }}/data
+      type: DirectoryOrCreate
+
+  volumeMounts:
+  - name: nexus-data
+    mountPath: /dls/{{ beamline }}/data
+    mountPropagation: HostToContainer
+  - name: nexus-template
+    mountPath: /templates
+
+  application:
+    server:
+      port: 8084
+    spring:
+      profiles:
+        active: rabbitmq
+      rabbitmq:
+        host: {{ beamline }}-rabbitmq-daq.diamond.ac.uk
+        username: guest
+    files:
+      output:
+        # directory:
+        #   staticDirectory: /dls/{{ beamline }}/data/2025
+        nameTemplate: <DATA_SESSION>
+        devices:
+          types:
+            # synchrotron: NX_SOURCE
+            # undulator: NX_INSERTION_DEVICE
+            # dcm: NX_MONOCHROMATOR
+            # slits: NX_SLIT
+            # i0: NX_MONITOR
+            # it: NX_MONITOR
+    containerEnvVars:
+      - name: SPRING_RABBITMQ_PASSWORD
+        value: guest
+  # securityContext:
+  #   runAsUser:
+  #   runAsGroup:

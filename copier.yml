@@ -1,6 +1,8 @@
 _message_before_copy: |
   This template will create a new repository which describes the Kubernetes configuration for IOC and service instances. Each repository represents a group of IOCs and services that are deployed to *the same cluster* and the *same namespace*. The grouping can be arbitrary, e.g. by beamline, location, technical area, maintainer etc.
 
+_message_after_copy: |
+  🎉 For detailed information about each service, refer to the documentation in their respective folders.
 # minimum version for new style of migrations
 _min_copier_version: "9.3.0"
 

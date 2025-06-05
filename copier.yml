@@ -172,6 +172,7 @@ instrument:
     {% endif %}
   when: >-
     {{ athena_services != [] }}
+
 logging_url:
   type: str
   help: URL for centralized logging. Leave blank if not applicable.

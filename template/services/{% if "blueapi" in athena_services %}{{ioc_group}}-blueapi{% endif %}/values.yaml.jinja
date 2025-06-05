@@ -15,16 +15,12 @@ blueapi:
     env:
       metadata:
          instrument: {{ ioc_group }}
-         instrument_session: cm40635-3
+         # instrument_session: 
       sources:
       - kind: dodal
         module: dodal.beamlines.{{ ioc_group }}
       - kind: planFunctions
         module: dodal.plans
-      # - kind: planFunctions
-      #   module: {{ ioc_group }}_bluesky.plans
-      # - kind: planFunctions
-      #   module: {{ ioc_group }}_bluesky.stubs
       events:
         broadcast_status_events: False
     stomp:

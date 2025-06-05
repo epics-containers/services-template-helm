@@ -2,13 +2,13 @@ nexus-file-converter:
   debug:
     enabled: true
     suspend: false
-  beamline: {{ beamline }}
+  beamline: {{ ioc_group }}
   template:
     entry/:
       NX_class@: NXentry
       instrument/:
         NX_class@: NXinstrument
-        name: {{ beamline }}
+        name: {{ ioc_group }}
 
   volumes:
   - name: nexus-template
@@ -19,12 +19,12 @@ nexus-file-converter:
         path: template.yaml
   - name: nexus-data
     hostPath:
-      path: /dls/{{ beamline }}/data
+      path: /dls/{{ ioc_group }}/data
       type: DirectoryOrCreate
 
   volumeMounts:
   - name: nexus-data
-    mountPath: /dls/{{ beamline }}/data
+    mountPath: /dls/{{ ioc_group }}/data
     mountPropagation: HostToContainer
   - name: nexus-template
     mountPath: /templates
@@ -36,24 +36,17 @@ nexus-file-converter:
       profiles:
         active: rabbitmq
       rabbitmq:
-        host: {{ beamline }}-rabbitmq-daq.diamond.ac.uk
+        host: {{ ioc_group }}-rabbitmq-daq.diamond.ac.uk
         username: guest
+        password: guest
     files:
       output:
         # directory:
-        #   staticDirectory: /dls/{{ beamline }}/data/2025
+        #   staticDirectory: /dls/{{ ioc_group }}/data/2025
         nameTemplate: <DATA_SESSION>
         devices:
           types:
             # synchrotron: NX_SOURCE
-            # undulator: NX_INSERTION_DEVICE
-            # dcm: NX_MONOCHROMATOR
-            # slits: NX_SLIT
-            # i0: NX_MONITOR
-            # it: NX_MONITOR
-    containerEnvVars:
-      - name: SPRING_RABBITMQ_PASSWORD
-        value: guest
   # securityContext:
   #   runAsUser:
   #   runAsGroup:

@@ -157,22 +157,6 @@ athena_services:
     - blueapi
     - nexus
 
-beamline:
-  type: str
-  help: |
-    A short prefix added to the names of Athena services in this repository.
-      At DLS, we use the beamline short name. 
-      e.g. "i16", "b01-1", "p47", "p99"
-  default: >-
-    {{ ioc_group }}
-  validator: >-
-    {% if not (beamline | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
-    {{beamline}} must be alphanumeric plus hyphens and start with a letter.
-    {% endif %}
-  when: >-
-    {{ athena_services != [] }}
-
-
 logging_url:
   type: str
   help: URL for centralized logging. Leave blank if not applicable.

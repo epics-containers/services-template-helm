@@ -1,6 +1,6 @@
 rabbitmq:
   auth:
-    username: {{ beamline }}
+    username: {{ ioc_group }}
     existingPasswordSecret: rabbitmq-secrets
     existingErlangSecret: rabbitmq-secrets
   extraPlugins: rabbitmq_jms_topic_exchange,rabbitmq_stomp
@@ -11,7 +11,7 @@ rabbitmq:
     create: false
   serviceAccount:
     create: false
-    name: default-full-access-mounted # TODO: use only required permissions
+    name: default-full-access-mounted
   extraContainerPorts:
     - name: stomp
       containerPort: 61613
@@ -22,9 +22,3 @@ rabbitmq:
       - name: stomp
         port: 61613
         targetPort: stomp
-  metrics:  # TODO: Enable monitoring stack in namespace
-    enabled: true
-    podAnnotations:
-      prometheus.io/scrape: "true"
-      prometheus.io/path: /metrics
-      prometheus.io/port: "8080"

@@ -9,16 +9,16 @@ blueapi:
       memory: 100Mi
   ingress:
     create: true
-    host: {{ ioc_group }}-blueapi.diamond.ac.uk
+    host: {{ instrument }}-blueapi.diamond.ac.uk
   
   worker:
     env:
       metadata:
-         instrument: {{ ioc_group }}
+         instrument: {{ instrument }}
          # instrument_session: 
       sources:
       - kind: dodal
-        module: dodal.beamlines.{{ ioc_group }}
+        module: dodal.beamlines.{{ instrument }}
       - kind: planFunctions
         module: dodal.plans
       events:
@@ -27,13 +27,13 @@ blueapi:
       auth:
         username: guest
         password: guest
-      host: {{ ioc_group }}-rabbitmq
+      host: {{ instrument }}-rabbitmq
       enabled: true
     oidc:
       well_known_url: "https://authn.diamond.ac.uk/realms/master/.well-known/openid-configuration"
       client_id: "blueapi-cli"
     scratch:
-      root: /dls_sw/{{ ioc_group }}/software/blueapi/scratch
+      root: /dls_sw/{{ instrument }}/software/blueapi/scratch
       repositories:
         - name: dodal
           remote_url: https://github.com/DiamondLightSource/dodal.git

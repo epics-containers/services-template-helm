@@ -1,6 +1,8 @@
 _message_before_copy: |
   This template will create a new repository which describes the Kubernetes configuration for IOC and service instances. Each repository represents a group of IOCs and services that are deployed to *the same cluster* and the *same namespace*. The grouping can be arbitrary, e.g. by beamline, location, technical area, maintainer etc.
 
+_message_after_copy: |
+  🎉 For detailed information about each service, refer to the documentation in their respective folders.
 # minimum version for new style of migrations
 _min_copier_version: "9.3.0"
 
@@ -146,6 +148,32 @@ repo_uri:
     {%- else -%}
     https://{{git_platform}}/{{github_org}}/{{ioc_group}}-services
     {%- endif %}
+
+athena_services:
+  help: Athena services to be included in this repository. Leave blank if not applicable.
+  default: []
+  type: str
+  multiselect: true 
+  choices:
+    - rabbitmq
+    - blueapi
+    - nexus
+
+instrument:
+  type: str
+  help: |
+    A short name, which is used in the "NXInstrument" in produced NeXus files (if enabled)
+      and as a prefix for the names of services to ensure uniqueness.
+      Typically we use the instrument short name.
+      e.g. "i22", "b16", "i03-1", "SWIFT"
+  default: >-
+    {{ ioc_group }}
+  validator: >-
+    {% if not (instrument | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
+    {{instrument}} must be alphanumeric plus hyphens and start with a letter.
+    {% endif %}
+  when: >-
+    {{ athena_services != [] }}
 
 logging_url:
   type: str

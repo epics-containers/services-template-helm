@@ -1,0 +1,43 @@
+blueapi:
+  hostNetwork: true
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 500Mi
+    requests:
+      cpu: 500m
+      memory: 100Mi
+  nodeSelector:
+    kubernetes.io/hostname: {{ ioc_group }}-control.diamond.ac.uk
+  ingress:
+    create: true
+    host: {{ instrument }}-blueapi.diamond.ac.uk
+  
+  worker:
+    env:
+      metadata:
+         instrument: {{ instrument }}
+         # instrument_session: 
+      sources:
+      - kind: dodal
+        module: dodal.beamlines.{{ instrument }}
+      - kind: planFunctions
+        module: dodal.plans
+      events:
+        broadcast_status_events: false
+    stomp:
+      auth:
+        username: guest
+        password: guest
+      host: {{ instrument }}-rabbitmq-daq.diamond.ac.uk
+      enabled: true
+    # oidc:
+    #  well_known_url: "https://authn.diamond.ac.uk/realms/master/.well-known/openid-configuration"
+    #  client_id: "blueapi-cli"
+    scratch:
+      root: /dls_sw/{{ instrument }}/software/blueapi/scratch
+      repositories:
+        - name: dodal
+          remote_url: https://github.com/DiamondLightSource/dodal.git
+  initContainer:
+    enabled: true

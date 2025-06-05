@@ -1,14 +1,14 @@
 nexus-file-converter:
   debug:
-    enabled: true
+    enabled: false
     suspend: false
-  beamline: {{ ioc_group }}
+  beamline: {{ instrument }}
   template:
     entry/:
       NX_class@: NXentry
       instrument/:
         NX_class@: NXinstrument
-        name: {{ ioc_group }}
+        name: {{ instrument }}
 
   volumes:
   - name: nexus-template
@@ -36,7 +36,7 @@ nexus-file-converter:
       profiles:
         active: rabbitmq
       rabbitmq:
-        host: {{ ioc_group }}-rabbitmq-daq.diamond.ac.uk
+        host: {{ instrument }}-rabbitmq-daq.diamond.ac.uk
         username: guest
         password: guest
     files:
@@ -46,7 +46,7 @@ nexus-file-converter:
         nameTemplate: <DATA_SESSION>
         devices:
           types:
-            # synchrotron: NX_SOURCE
-  # securityContext:
-  #   runAsUser:
-  #   runAsGroup:
+            synchrotron: NX_SOURCE
+#  securityContext:
+#    runAsUser:
+#    runAsGroup:

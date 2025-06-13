@@ -1,4 +1,7 @@
 rabbitmq:
+  extraConfiguration: |-
+    stomp.default_user = guest
+    stomp.default_pass = guest
   auth:
     username: admin
     existingPasswordSecret: rabbitmq-secrets

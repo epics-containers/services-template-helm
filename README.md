@@ -9,7 +9,7 @@ Activate a Python virtual environment, then:
 ```bash
 pip install copier
 # this will create a new folder MY_REPO_NAME:
-copier copy https://github.com/epics-containers/services-template-helm
+copier copy https://github.com/epics-containers/services-template-helm MY_REPO_NAME
 ```
 You will be asked for a few details and the resulting project is ready to push.
 Make the first commit and push the repository.

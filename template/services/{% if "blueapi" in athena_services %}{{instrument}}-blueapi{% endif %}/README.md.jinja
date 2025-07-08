@@ -10,5 +10,16 @@ To request an Ingress for `{{ instrument }}-blueapi.diamond.ac.uk` in the `{{ cl
     - **Ingress Name:**  
       `{{ instrument }}-blueapi.diamond.ac.uk`
 
-
 Please add the instrument session in the worker.env.metadata.instrument_session
+
+{% if auth_enabled %}
+3. Add the client secret and cookie secret to `templates/secret.yaml`:
+  - To obtain the client secret, email lims-support@diamond.ac.uk and request a Keycloak client named `{{ instrument }}-blueapi` for blueapi, specifying the ingress `{{ instrument }}-blueapi.diamond.ac.uk`. The support team will send you the required secret.
+  - To generate a cookie secret, refer to the [OAuth2 Proxy documentation](https://oauth2-proxy.github.io/oauth2-proxy/configuration/overview#generating-a-cookie-secret).
+
+  After obtaining both secrets, seal them with the following commands:
+  ```
+  echo -n CLIENT-SECRET | kubeseal --raw --namespace {{ cluster_namespace }} --name blueapi-secret
+  echo -n COOKIE-SECRET | kubeseal --raw --namespace {{ cluster_namespace }} --name blueapi-secret
+  ```
+{% endif %}

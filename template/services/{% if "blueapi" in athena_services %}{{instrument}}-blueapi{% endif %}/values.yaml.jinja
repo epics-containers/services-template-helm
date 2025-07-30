@@ -1,23 +1,17 @@
 blueapi:
   hostNetwork: true
-  resources:
-    limits:
-      cpu: 1000m
-      memory: 500Mi
-    requests:
-      cpu: 500m
-      memory: 100Mi
-  nodeSelector:
-    kubernetes.io/hostname: {{ ioc_group }}-control.diamond.ac.uk
   ingress:
-    create: true
-    host: {{ instrument }}-blueapi.diamond.ac.uk
+    enabled: false
+    hosts:
+      - host: {{ instrument }}-blueapi.diamond.ac.uk
+        paths:
+          - path: /
+            pathType: Prefix
   
   worker:
     env:
       metadata:
          instrument: {{ instrument }}
-         # instrument_session: 
       sources:
       - kind: dodal
         module: dodal.beamlines.{{ instrument }}
@@ -29,13 +23,13 @@ blueapi:
       auth:
         username: guest
         password: guest
-      host: {{ instrument }}-rabbitmq-daq.diamond.ac.uk
+      url: tcp://{{ instrument }}-rabbitmq-daq.diamond.ac.uk:61613
       enabled: true
     logging:
       level: "INFO"
       graylog:
         enabled: true
-        url: http://graylog-log-target.diamond.ac.uk:12231/
+        url: tcp://graylog-log-target.diamond.ac.uk:12231/
     # oidc:
     #  well_known_url: "https://authn.diamond.ac.uk/realms/master/.well-known/openid-configuration"
     #  client_id: "blueapi-cli"

@@ -4,9 +4,9 @@ Follow the steps below to configure RabbitMQ for the `{{ cluster_namespace }}` n
 
 ## 1.  Create Secrets
 
-Create two sealed secrets using kubeseal: one for `rabbitmq-password`, which is required to log in to the admin portal, and another for `rabbitmq-erlang-cookie`, which is used to maintain state and prevent RabbitMQ restarting prematurely.
+Create a sealed secret using kubeseal, this is the `rabbitmq-erlang-cookie`, which is used to maintain state and prevent RabbitMQ restarting prematurely.
 
-Use [`kubeseal`](https://github.com/bitnami-labs/sealed-secrets?tab=readme-ov-file#raw-mode-experimental) in raw mode to seal each secret.
+Use [`kubeseal`](https://github.com/bitnami-labs/sealed-secrets?tab=readme-ov-file#raw-mode-experimental) in raw mode to seal the secret.
 This command generates a random string and seals it with kubeseal which are then safe to commit to public repositories.
 
 ```bash
@@ -14,7 +14,6 @@ head -c 500 /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1 | kubesea
 ```
 
 This will output a sealed string. Add the resulting output into the appropriate fields in `templates/secret.yaml`:
-* `rabbitmq-password`
 * `rabbitmq-erlang-cookie`
 
 ---

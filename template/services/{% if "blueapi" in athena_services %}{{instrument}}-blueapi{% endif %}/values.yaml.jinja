@@ -1,23 +1,17 @@
 blueapi:
   hostNetwork: true
-  resources:
-    limits:
-      cpu: 1000m
-      memory: 500Mi
-    requests:
-      cpu: 500m
-      memory: 100Mi
-  nodeSelector:
-    kubernetes.io/hostname: {{ ioc_group }}-control.diamond.ac.uk
   ingress:
-    create: {% if auth_enabled %}false{% else %}true{% endif %}
-    host: {{ instrument }}-blueapi.diamond.ac.uk
+    enabled: {% if auth_enabled %}false{% else %}true{% endif %}
+    hosts:
+      - host: {{ instrument }}-blueapi.diamond.ac.uk
+        paths:
+          - path: /
+            pathType: Prefix
   
   worker:
     env:
       metadata:
          instrument: {{ instrument }}
-         # instrument_session: 
       sources:
       - kind: dodal
         module: dodal.beamlines.{{ instrument }}
@@ -29,7 +23,7 @@ blueapi:
       auth:
         username: guest
         password: guest
-      host: {{ instrument }}-rabbitmq-daq.diamond.ac.uk
+      url: tcp://{{ instrument }}-rabbitmq-daq.diamond.ac.uk:61613
       enabled: true
     logging:
       level: "INFO"

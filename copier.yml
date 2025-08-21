@@ -62,12 +62,11 @@ location:
   help: |
     Default location where these IOCs and services will run.
 
-       At DLS this should be beamline shortname or blank for the accelerator.
-  default: >-
-    {{ ioc_group }}
+      At DLS this should blxxi for beamlines or one of srxxc, brxxc, linac for the accelerator
+  placeholder: e.g. "bl21i" "bl16b" "bl01c" "sr03c" "linac"
   validator: >-
-    {% if not (ioc_group | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
-    {{ioc_group}} must be alphanumeric and start with a letter, it may contain hyphens
+    {% if not (ioc_group | regex_search('^[a-zA-Z][a-zA-Z0-9]+$')) %}
+    {{ioc_group}} must be alphanumeric and start with a letter
     {% endif %}
 
 cluster_name:
@@ -97,17 +96,6 @@ cluster_namespace:
     it may contain hyphens
     {% endif %}
 
-cluster_type:
-  type: str
-  help: |
-    Apply cluster specific details.
-
-       To add to this list make a PR to services-template-helm.
-  choices:
-    Skip: ""
-    DLS Cluster: dls_cluster
-  default: dls_cluster
-
 git_platform:
   type: str
   help: |
@@ -118,18 +106,6 @@ git_platform:
     - github.com
     - gitlab.diamond.ac.uk
 
-github_org:
-  type: str
-  help: The GitHub organisation that will contain this repo.
-  placeholder: e.g. your own GitHub account or epics-containers
-  when: >-
-    {{ git_platform == 'github.com' }}
-  validator: >-
-    {% if not (github_org | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
-    {{github_org}} must be lower case AlphaNumeric and start with a letter,
-    it may contain hyphens
-    {% endif -%}
-
 dls_technical_area:
   type: str
   help: The DLS gitlab subfolder for this repo.
@@ -139,21 +115,11 @@ dls_technical_area:
     - beamline
     - accelerator
 
-repo_uri:
-  type: str
-  help: Remote URI of the services repository.
-  default: >-
-    {% if git_platform == 'gitlab.diamond.ac.uk' -%}
-    https://{{git_platform}}/controls/containers/{{dls_technical_area}}/{{ioc_group}}-services
-    {%- else -%}
-    https://{{git_platform}}/{{github_org}}/{{ioc_group}}-services
-    {%- endif %}
-
 athena_services:
   help: Athena services to be included in this repository. Leave blank if not applicable.
   default: []
   type: str
-  multiselect: true 
+  multiselect: true
   choices:
     - rabbitmq
     - blueapi

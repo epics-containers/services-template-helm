@@ -125,6 +125,12 @@ athena_services:
     - blueapi
     - nexus
 
+auth_enabled:
+  help: Enable authentication for blueapi? (Required for Numtracker integration)
+  type: bool
+  when: >-
+    {{ "blueapi" in athena_services }}
+
 instrument:
   type: str
   help: |

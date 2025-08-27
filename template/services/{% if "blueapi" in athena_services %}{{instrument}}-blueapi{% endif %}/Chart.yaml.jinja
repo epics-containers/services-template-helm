@@ -12,3 +12,9 @@ dependencies:
   - name: blueapi
     version: "1.1.0"
     repository: "oci://ghcr.io/diamondlightsource/charts"
+{% if auth_enabled %}
+  - name: oauth2-proxy
+    alias: oauth2
+    repository: https://oauth2-proxy.github.io/manifests
+    version: 8.2.0
+{% endif %}

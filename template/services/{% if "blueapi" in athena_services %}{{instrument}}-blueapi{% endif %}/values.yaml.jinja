@@ -1,7 +1,7 @@
 blueapi:
   hostNetwork: true
   ingress:
-    enabled: false
+    enabled: {% if auth_enabled %}false{% else %}true{% endif %}
     hosts:
       - host: {{ instrument }}-blueapi.diamond.ac.uk
         paths:
@@ -29,10 +29,12 @@ blueapi:
       level: "INFO"
       graylog:
         enabled: true
-        url: tcp://graylog-log-target.diamond.ac.uk:12231/
-    # oidc:
-    #  well_known_url: "https://authn.diamond.ac.uk/realms/master/.well-known/openid-configuration"
-    #  client_id: "blueapi-cli"
+        url: http://graylog-log-target.diamond.ac.uk:12231/
+    {% if auth_enabled %}
+    oidc:
+      well_known_url: "https://authn.diamond.ac.uk/realms/master/.well-known/openid-configuration"
+      client_id: "blueapi-cli"
+    {% endif %}
     scratch:
       root: /dls_sw/{{ instrument }}/software/blueapi/scratch
       repositories:
@@ -40,3 +42,63 @@ blueapi:
           remote_url: https://github.com/DiamondLightSource/dodal.git
   initContainer:
     enabled: true
+
+{% if auth_enabled %}
+oauth2:
+  proxyVarsAsSecrets: false
+  extraEnv:
+    - name: OAUTH2_PROXY_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: blueapi-secret
+          key: client-secret
+    - name: OAUTH2_PROXY_COOKIE_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: blueapi-secret
+          key: cookie-secret
+  config:
+    configFile: |-
+      skip_provider_button = true
+      skip_jwt_bearer_tokens = true
+      cookie_refresh="1m"
+      cookie_expire="30m"
+      email_domains = [ "*" ]
+      skip_auth_routes=[
+      "GET=^/config/oidc",
+      "GET=^/healthz"
+      ]
+  ingress:
+    enabled: true
+    hosts:
+      - {{ instrument }}-blueapi.diamond.ac.uk
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-buffer-size: "8k"
+    path: /
+    pathType: Prefix
+  alphaConfig:
+    enabled: true
+    configData:
+      upstreamConfig:
+        proxyRawPath: true
+        upstreams:
+          - id: blueapi
+            path: /
+            uri: http://{{ instrument }}-blueapi
+      providers:
+        - provider: oidc
+          id: authn.diamond.ac.uk
+          clientID: {{ instrument }}-blueapi
+          clientSecret: ${OAUTH2_PROXY_CLIENT_SECRET}
+          oidcConfig:
+            insecureAllowUnverifiedEmail: true
+            emailClaim: sub
+            audienceClaims: ["aud"]
+            extraAudiences: ["blueapi"]
+            issuerURL: https://authn.diamond.ac.uk/realms/master
+      injectRequestHeaders:
+        - name: Authorization
+          values:
+            - claim: access_token
+              prefix: "Bearer "
+{% endif %}

@@ -14,7 +14,7 @@ Please add the instrument session in the worker.env.metadata.instrument_session
 
 {% if auth_enabled %}
 3. Add the client secret and cookie secret to `templates/secret.yaml`:
-  - To obtain the client secret, email lims-support@diamond.ac.uk and request a Keycloak client named `{{ instrument }}-blueapi` for blueapi, specifying the ingress `{{ instrument }}-blueapi.diamond.ac.uk`. The support team will send you the required secret.
+  - To obtain the client secret, message on slack #athena-components and request a Keycloak client named `{{ instrument }}-blueapi` for blueapi, specifying the ingress `{{ instrument }}-blueapi.diamond.ac.uk`. The support team will send you the required secret.
   - To generate a cookie secret, refer to the [OAuth2 Proxy documentation](https://oauth2-proxy.github.io/oauth2-proxy/configuration/overview#generating-a-cookie-secret).
 
   After obtaining both secrets, seal them with the following commands:

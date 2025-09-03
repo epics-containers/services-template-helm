@@ -65,8 +65,8 @@ location:
       At DLS this should blxxi for beamlines or one of srxxc, brxxc, linac for the accelerator
   placeholder: e.g. "bl21i" "bl16b" "bl01c" "sr03c" "linac"
   validator: >-
-    {% if not (ioc_group | regex_search('^[a-zA-Z][a-zA-Z0-9]+$')) %}
-    {{ioc_group}} must be alphanumeric and start with a letter
+    {% if not (location | regex_search('^[a-zA-Z][a-zA-Z0-9]+$')) %}
+    {{ location }} must be alphanumeric and start with a letter
     {% endif %}
 
 cluster_name:

@@ -34,6 +34,7 @@ blueapi:
     oidc:
       well_known_url: "https://authn.diamond.ac.uk/realms/master/.well-known/openid-configuration"
       client_id: "blueapi-cli"
+      logout_redirect_endpoint: "oauth2/sign_out"
     {% endif %}
     scratch:
       root: /dls_sw/{{ instrument }}/software/blueapi/scratch

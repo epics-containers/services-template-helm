@@ -6,7 +6,7 @@ verify:
   tags:
     - epics-containers
     - argus
-  image: python:3.11
+  image: python:3.13
   variables:
     DOCKER_PROVIDER: kodman
   script:

@@ -41,9 +41,14 @@ nexus-file-converter:
         password: guest
     files:
       output:
+        {% if numtracker_enabled %}
+        directory:
+          staticDirectory: ""  # explicitly empty, get from StartDocument metadata
+        {% else %}
         # directory:
         #   staticDirectory: /dls/{{ ioc_group }}/data/2025
         nameTemplate: <DATA_SESSION>
+        {% endif %}
         devices:
           types:
             synchrotron: NX_SOURCE

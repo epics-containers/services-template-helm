@@ -36,6 +36,10 @@ blueapi:
       client_id: "blueapi-cli"
       logout_redirect_endpoint: "oauth2/sign_out"
     {% endif %}
+    {% if numtracker_enabled %}
+    numtracker:
+      url: https://numtracker.diamond.ac.uk/graphql
+    {% endif %}
     scratch:
       root: /dls_sw/{{ instrument }}/software/blueapi/scratch
       repositories:

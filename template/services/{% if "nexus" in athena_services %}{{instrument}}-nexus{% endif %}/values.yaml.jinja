@@ -41,9 +41,11 @@ nexus-file-converter:
         password: guest
     files:
       output:
+        {% if not numtracker_enabled %}
         # directory:
         #   staticDirectory: /dls/{{ ioc_group }}/data/2025
         nameTemplate: <DATA_SESSION>
+        {% endif %}
         devices:
           types:
             synchrotron: NX_SOURCE

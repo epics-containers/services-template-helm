@@ -41,7 +41,10 @@ nexus-file-converter:
         password: guest
     files:
       output:
-        {% if not numtracker_enabled %}
+        {% if numtracker_enabled %}
+        directory:
+          staticDirectory: ""  # explicitly empty, get from StartDocument metadata
+        {% else %}
         # directory:
         #   staticDirectory: /dls/{{ ioc_group }}/data/2025
         nameTemplate: <DATA_SESSION>

@@ -19,12 +19,12 @@ nexus-file-converter:
         path: template.yaml
   - name: nexus-data
     hostPath:
-      path: /dls/{{ ioc_group }}/data
+      path: /dls/{{ domain }}/data
       type: DirectoryOrCreate
 
   volumeMounts:
   - name: nexus-data
-    mountPath: /dls/{{ ioc_group }}/data
+    mountPath: /dls/{{ domain }}/data
     mountPropagation: HostToContainer
   - name: nexus-template
     mountPath: /templates
@@ -46,7 +46,7 @@ nexus-file-converter:
           staticDirectory: ""  # explicitly empty, get from StartDocument metadata
         {% else %}
         # directory:
-        #   staticDirectory: /dls/{{ ioc_group }}/data/2025
+        #   staticDirectory: /dls/{{ domain }}/data/2025
         nameTemplate: <DATA_SESSION>
         {% endif %}
         devices:

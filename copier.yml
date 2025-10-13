@@ -37,25 +37,25 @@ _subdirectory: "template"
 
 _preserve_symlinks: true
 
-ioc_group:
+domain:
   type: str
   help: |
-    A name for this group of IOC and service instances.
+    The domain for this collection of IOCs and service.
 
-       At DLS this should be the short beamline name or the technical area
+       At DLS this should be the short beamline name or the short technical area
        for accelerator repos.
 
-  placeholder: e.g. "i16", "b01-1", "p47" "vacuum"
+  placeholder: e.g. "i16", "b01-1", "p47", "va", "rf"
   validator: >-
-    {% if not (ioc_group | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
-    {{ioc_group}} must be alphanumeric plus hyphens and start with a letter.
+    {% if not (domain | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
+    {{domain}} must be alphanumeric plus hyphens and start with a letter.
     {% endif %}
 
 description:
   type: str
   help: A One line description of the module
   default: >-
-    {{ ioc_group }} IOC Instances and Services
+    {{ domain }} IOC Instances and Services
 
 location:
   type: str
@@ -147,7 +147,7 @@ instrument:
       Typically we use the instrument short name.
       e.g. "i22", "b16", "i03-1", "SWIFT"
   default: >-
-    {{ ioc_group }}
+    {{ domain }}
   validator: >-
     {% if not (instrument | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
     {{instrument}} must be alphanumeric plus hyphens and start with a letter.

@@ -133,7 +133,7 @@ auth_enabled:
     {{ "blueapi" in athena_services }}
 
 numtracker_enabled:
-  help: Enable Numtracker integration for blueapi and NeXus service
+  help: Enable Numtracker integration for blueapi and NeXus service. Requires authentication using authn.diamond.ac.uk.
   default: False
   type: bool
   when: >-

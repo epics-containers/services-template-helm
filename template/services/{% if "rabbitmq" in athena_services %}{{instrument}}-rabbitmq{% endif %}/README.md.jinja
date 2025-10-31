@@ -10,7 +10,8 @@ Use [`kubeseal`](https://github.com/bitnami-labs/sealed-secrets?tab=readme-ov-fi
 This command generates a random string and seals it with kubeseal which are then safe to commit to public repositories.
 
 ```bash
-head -c 500 /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1 | kubeseal --raw --namespace {{ cluster_namespace }} --name rabbitmq-secrets
+$ # module load k8s-{{ instrument }}
+$ head -c 500 /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1 | kubeseal --raw --namespace {{ cluster_namespace }} --name rabbitmq-secrets
 ```
 
 This will output a sealed string. Add the resulting output into the appropriate field in `templates/secret.yaml`.
@@ -23,4 +24,4 @@ Request a static IP mapped from a DNS entry from the Scientific Computing help d
 
 Once assigned, set the static IP under the `loadBalancerIP` field in your `values.yaml` file.
 
-`{{instrument}}-rabbitmq-daq.diamond.ac.uk -> Static IP ` this mapping allows processes outside of the namespace e.g. Analysis to access data from rabbitmq.
+`{{instrument}}-rabbitmq-daq.diamond.ac.uk -> Static IP` this mapping allows processes outside of the namespace e.g. Analysis to access data from rabbitmq.

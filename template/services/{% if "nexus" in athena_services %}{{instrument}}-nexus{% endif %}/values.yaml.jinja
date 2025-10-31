@@ -11,12 +11,6 @@ nexus-file-converter:
         name: {{ instrument }}
 
   volumes:
-  - name: nexus-template
-    configMap:
-      name: nexus-template
-      items:
-      - key: template.yaml
-        path: template.yaml
   - name: nexus-data
     hostPath:
       path: /dls/{{ domain }}/data
@@ -26,8 +20,6 @@ nexus-file-converter:
   - name: nexus-data
     mountPath: /dls/{{ domain }}/data
     mountPropagation: HostToContainer
-  - name: nexus-template
-    mountPath: /templates
 
   application:
     server:

@@ -1,5 +1,4 @@
 blueapi:
-  hostNetwork: true
   ingress:
     enabled: {% if auth_enabled %}false{% else %}true{% endif %}
     hosts:
@@ -13,6 +12,14 @@ blueapi:
       value: {{ instrument }}
     - name: INSTRUMENT
       value: {{ instrument }}
+    - name: EPICS_PVA_NAME_SERVERS
+      value: {{ domain }}-gateways:9075
+    - name: EPICS_CA_NAME_SERVERS
+      value: {{ domain }}-gateways:9064
+    - name: EPICS_PVA_AUTO_ADDR_LIST
+      value: NO
+    - name: EPICS_CA_AUTO_ADDR_LIST
+      value: NO
 
   worker:
     env:

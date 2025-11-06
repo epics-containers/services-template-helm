@@ -119,7 +119,7 @@ gateway:
   help: Deploy an EPICS gateway to allow traffic from pods without hostNetwork. 
   default: true
   type: bool
-  when >-
+  when: >-
     {{ location.startswith('bl') }}
   
 athena_services:

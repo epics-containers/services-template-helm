@@ -10,11 +10,11 @@ Add the following environment variables to any container(s) that communicate wit
 - name: EPICS_PVA_NAME_SERVERS
   value: {{ domain }}-epics-gateways
 - name: EPICS_PVA_AUTO_ADDR_LIST
-  value: NO
+  value: "NO"
 - name: EPICS_CA_NAME_SERVERS
   value: {{ domain }}-epics-gateways
 - name: EPICS_CA_AUTO_ADDR_LIST
-  value: NO
+  value: "NO"
 ```
 
 ## Configuring external services with the LoadBalancer

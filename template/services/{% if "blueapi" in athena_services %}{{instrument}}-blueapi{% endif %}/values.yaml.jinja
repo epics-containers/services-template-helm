@@ -1,5 +1,10 @@
 blueapi:
+  {% if not gateway %}
   hostNetwork: true
+  # To run as hostNetwork requires running as k8s-{{ domain }}-beamline
+  securityContext:
+    runAsUser: # Find the required id with `id k8s-{{ domain }}-beamline`
+  {% endif %}
   ingress:
     enabled: {% if auth_enabled %}false{% else %}true{% endif %}
     hosts:
@@ -12,7 +17,15 @@ blueapi:
     - name: BEAMLINE
       value: {{ instrument }}
     - name: INSTRUMENT
-      value: {{ instrument }}
+      value: {{ instrument }}{% if gateway %}
+    - name: EPICS_PVA_NAME_SERVERS
+      value: {{ domain }}-epics-gateways:9075
+    - name: EPICS_CA_NAME_SERVERS
+      value: {{ domain }}-epics-gateways:9064
+    - name: EPICS_PVA_AUTO_ADDR_LIST
+      value: "NO"
+    - name: EPICS_CA_AUTO_ADDR_LIST
+      value: "NO"{% endif %}
 
   worker:
     env:

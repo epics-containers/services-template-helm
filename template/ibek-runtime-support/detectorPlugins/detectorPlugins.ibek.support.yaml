@@ -105,7 +105,7 @@ entity_models:
       - type: ADCore.NDROIStat
         NDARRAY_PORT: "{{ PORTPREFIX }}.stat"
         P: "{{ P }}"
-        R: ":STATS:"
+        R: ":ROISTAT:"
         PORT: "{{ PORTPREFIX }}.roistat"
         QUEUE: "{{ PLUGINQUEUE }}"
         MAX_ROIS: "{{ MAX_ROIS }}"
@@ -186,7 +186,7 @@ entity_models:
       - type: ADCore.NDROIStat
         NDARRAY_PORT: "{{ PORTPREFIX }}.stat"
         P: "{{ P }}"
-        R: ":STATS:"
+        R: ":ROISTAT:"
         PORT: "{{ PORTPREFIX }}.roistat"
         QUEUE: "{{ PLUGINQUEUE }}"
         MAX_ROIS: "{{ MAX_ROIS }}"

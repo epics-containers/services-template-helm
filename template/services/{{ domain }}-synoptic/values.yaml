@@ -23,7 +23,7 @@ ioc-instance:
           git fetch
           git checkout $ARGOCD_COMMIT_HASH
           git submodule update --init
-          rm -r /epics/opi/*
+          rm -rf /epics/opi/*
           cp -r /data/synoptic-git/synoptic/* /epics/opi
 
   # don't use the ioc-instance livenesProbe, preStop which dont exist in fastcs image.

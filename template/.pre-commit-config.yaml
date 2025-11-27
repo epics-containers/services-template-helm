@@ -1,0 +1,27 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-yaml
+        exclude: ^Charts/|/templates/
+      - id: check-merge-conflict
+      # - id: end-of-file-fixer
+
+  - repo: local
+    hooks:
+      - id: tech-ui
+        name: generate and validate the synoptic and component screens
+        language: system
+        entry: uvx techui-builder synoptic/techui.yaml
+        files: ^synoptic/
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: ibek-runtime-schema
+        name: generate schema for local ibek entities
+        language: system
+        entry: bash -c "uvx ibek ioc generate-schema ibek-runtime-support/*/*.ibek.support.yaml --output ibek-runtime-support/runtime.schema.json"
+        files: ^ibek-runtime-support/
+        pass_filenames: false

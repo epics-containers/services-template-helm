@@ -13,6 +13,16 @@ set -xe
 rm -rf ${ROOT}/.ci_work/
 mkdir -p ${ROOT}/.ci_work
 
+# Perform pre-commit checks to ensure techui-builder has validated the synoptic
+################################################################################
+
+cd ${ROOT}
+git submodule update --init
+uvx pre-commit install
+uvx pre-commit run --all-files --show-diff-on-failure
+
+# Verify the IOC instance definitions
+################################################################################
 # if a docker provider is specified, use it
 if [[ $DOCKER_PROVIDER ]]; then
     docker=$DOCKER_PROVIDER
@@ -22,7 +32,7 @@ else
 fi
 
 # copy the services to a temporary location to avoid dirtying the repo
-cp -r ${ROOT}/services/* ${ROOT}/.ci_work/
+cp -Lr ${ROOT}/services/* ${ROOT}/.ci_work/
 
 for service in ${ROOT}/.ci_work/*/  # */ to skip files
 do

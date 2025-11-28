@@ -16,6 +16,8 @@ mkdir -p ${ROOT}/.ci_work
 # Perform pre-commit checks to ensure techui-builder has validated the synoptic
 ################################################################################
 
+pip install -r requirements.txt
+
 cd ${ROOT}
 git submodule update --init
 uvx pre-commit install

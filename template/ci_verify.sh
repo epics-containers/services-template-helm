@@ -14,13 +14,23 @@ rm -rf ${ROOT}/.ci_work/
 mkdir -p ${ROOT}/.ci_work
 
 # Perform pre-commit checks to ensure techui-builder has validated the synoptic
+# and that the ibek-runtme-support schema is up to date
 ################################################################################
 
-pip install -r requirements.txt
 
 cd ${ROOT}
 git submodule update --init
+
+pip install uv
+# use python 3.13 to ensure latest pydantic
+uv venv --python 3.13 --clear
+source .venv/bin/activate
+uv pip install -r requirements.txt
+
+# run pre-commit checking which tool versions will be used.
 uvx pre-commit install
+uvx ibek --version
+uvx techui-builder --version
 uvx pre-commit run --all-files --show-diff-on-failure
 
 # Verify the IOC instance definitions

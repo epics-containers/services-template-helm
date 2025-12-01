@@ -16,7 +16,7 @@ repos:
         # only do this if the techui support submodule has been added
         entry: |
           bash -c "
-            if [[ -f synoptic/techui_support/techui_support.yaml ]]; then
+            if [[ -f synoptic/techui-support/techui-support.yaml ]]; then
               uvx techui-builder synoptic/techui.yaml
             fi"
         files: ^synoptic/

@@ -10,5 +10,4 @@ verify:
   variables:
     DOCKER_PROVIDER: kodman
   script:
-    - pip install -r requirements.txt
     - bash ci_verify.sh

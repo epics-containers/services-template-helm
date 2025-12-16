@@ -32,7 +32,7 @@ repos:
           bash -c "
             support=$(find ibek-runtime-support/ -name '*.ibek.support.yaml')
             if [[ -n ${support} ]]; then
-              uvx ibek ioc generate-schema ${support} \
+              uvx --python 3.13 ibek ioc generate-schema ${support} \
                 --output ibek-runtime-support/runtime.schema.json
             fi"
         files: ^ibek-runtime-support/

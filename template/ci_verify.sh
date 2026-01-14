@@ -43,8 +43,29 @@ else
     if ! docker version &>/dev/null; then docker=podman; else docker=docker; fi
 fi
 
-# copy the services to a temporary location to avoid dirtying the repo
-cp -Lr ${ROOT}/services/* ${ROOT}/.ci_work/
+# Determine diff base
+if [[ -n "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}" ]]; then
+  DIFF_BASE="origin/${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}"
+else
+  DIFF_BASE="${CI_COMMIT_BEFORE_SHA}"
+fi
+
+# Get changed services
+CHANGED_SERVICES=$(git diff --name-only "$DIFF_BASE" "$CI_COMMIT_SHA" \
+  | grep '^services/' \
+  | cut -d/ -f2 \
+  | sort -u)
+
+if [[ -z "$CHANGED_SERVICES" ]]; then
+  echo "No services changed. Exiting."
+  exit 0
+fi
+
+# copy only the changed services to a temporary location to avoid dirtying the repo
+for svc in $CHANGED_SERVICES; do
+  echo "Preparing service: $svc"
+  cp -Lr "${ROOT}/services/$svc" "${ROOT}/.ci_work/"
+done
 
 for service in ${ROOT}/.ci_work/*/  # */ to skip files
 do

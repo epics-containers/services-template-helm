@@ -134,7 +134,5 @@ do
 
     fi
 done
-# disable nullglob to restore default behavior
-shopt -u nullglob
 
 rm -r ${ROOT}/.ci_work

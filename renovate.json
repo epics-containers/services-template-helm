@@ -3,12 +3,25 @@
   "extends": [
     "config:recommended"
   ],
+  // "ignoreDeps": ["urllib3"],
   "packageRules": [
     {
       "groupName": "ec charts",
       "matchSourceUrls": [
         "https://github.com/epics-containers/ec-helm-charts"
       ]
+    },
+    {
+      "description": "Prevent Renovate from updating packages managed by services-template-helm",
+      "matchPackageNames": [
+        "urllib3",
+        "actions/checkout"
+      ],
+      "matchManagers": [
+        "gitlab-actions",
+        "github-actions"
+      ],
+      "enabled": false
     }
   ]
 }

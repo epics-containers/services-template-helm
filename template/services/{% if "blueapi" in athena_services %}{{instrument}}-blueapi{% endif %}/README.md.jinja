@@ -10,8 +10,6 @@ To request an Ingress for `{{ instrument }}-blueapi.diamond.ac.uk` in the `{{ cl
     - **Ingress Name:**  
       `{{ instrument }}-blueapi.diamond.ac.uk`
 
-Please add the instrument session in the worker.env.metadata.instrument_session
-
 3. Configure numtracker using the numtracker CLI client:
   Load the numtracker module on any DLS Red Hat workstation:
 
@@ -37,7 +35,7 @@ Please add the instrument session in the worker.env.metadata.instrument_session
   - To obtain the client secret, Create a ticket in [Keycloak Client registration](https://jira.diamond.ac.uk/servicedesk/customer/portal/5/create/176) with  
     Hostname: `https://{{ instrument }}-blueapi.diamond.ac.uk`
     Keycloak Environment: Dev/Test and Production
-    ClientId: `{instrument}Blueapi`
+    ClientId: `{{instrument}}Blueapi`
     GPG Public Key: Please follow docs [here](https://dev-guide.diamond.ac.uk/authn/how-tos/request-a-registration-with-keycloak/)
   - To generate a cookie secret, refer to the [OAuth2 Proxy documentation](https://oauth2-proxy.github.io/oauth2-proxy/configuration/overview#generating-a-cookie-secret).
 

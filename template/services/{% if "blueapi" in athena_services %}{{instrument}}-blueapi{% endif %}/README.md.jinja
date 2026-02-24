@@ -12,8 +12,27 @@ To request an Ingress for `{{ instrument }}-blueapi.diamond.ac.uk` in the `{{ cl
 
 Please add the instrument session in the worker.env.metadata.instrument_session
 
+3. Configure numtracker using the numtracker CLI client:
+  Load the numtracker module on any DLS Red Hat workstation:
+
+  ```
+  module load numtracker/staging
+  ```
+ 
+  For configuration details, see the [numtracker documentation](https://github.com/diamondLightSource/numtracker#configure-1).
+
+  Example configuration, please adapt this to beamlines requirements
+  ```
+  numtracker client configure {{instrument}} \
+  --directory '/dls/{instrument}/data/{year}/{visit}' \
+  --scan '{subdirectory}/{instrument}-{scan_number}' \
+  --detector '{subdirectory}/{scan_number}/{instrument}-{scan_number}-{detector}'
+  ```
+
+  **Note:** `numtracker-staging` will be replaced with `numtracker`. See [this issue](https://github.com/epics-containers/services-template-helm/issues/97) for more details.
+
 {% if auth_enabled %}
-3. Add the client secret and cookie secret to `templates/secret.yaml`:
+4. Add the client secret and cookie secret to `templates/secret.yaml`:
 
   - To obtain the client secret, Create a ticket in [Keycloak Client registration](https://jira.diamond.ac.uk/servicedesk/customer/portal/5/create/176) with  
     Hostname: `https://{{ instrument }}-blueapi.diamond.ac.uk`

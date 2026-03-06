@@ -1,10 +1,10 @@
 To request an Ingress for `{{ instrument }}-blueapi.diamond.ac.uk` in the `{{ cluster_namespace }}` namespace:
 
-1. Go to the Scientific Computing Help Desk at [schelpdesk.diamond.ac.uk](https://schelpdesk.diamond.ac.uk) and navigate to **Cloud → New Beamline Ingress**. Note that this is not **New Ingress**.
+1. Go to the Scientific Computing Help Desk at [schelpdesk.diamond.ac.uk](https://schelpdesk.diamond.ac.uk) and navigate to [**Cloud → New Beamline Ingress**](https://jira.diamond.ac.uk/servicedesk/customer/portal/2/create/156) for beamline clusters, or [**Cloud → New Ingress**](https://jira.diamond.ac.uk/servicedesk/customer/portal/2/create/91) for Argus / Pollux.
 2. Provide the following details:
 
-    - **Cluster Name:**  
-      Use `{{ cluster_name }}` in the description if the cluster is not Argus or Pollux.
+    - **Beamline Cluster Name** or **Cluster Name**: 
+      `{{ cluster_name }}`
     - **Namespace Name:**  
       `{{ cluster_namespace }}`
     - **Ingress Name:**  

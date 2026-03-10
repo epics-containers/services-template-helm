@@ -29,8 +29,7 @@ To request an Ingress for `{{ instrument }}-blueapi.diamond.ac.uk` in the `{{ cl
 
   **Note:** `numtracker-staging` will be replaced with `numtracker`. See [this issue](https://github.com/epics-containers/services-template-helm/issues/97) for more details.
 
-{% if auth_enabled %}
-4. Add the client secret and cookie secret to `templates/secret.yaml`:
+4. If blueapi auth is enabled, Add the client secret and cookie secret to `templates/secret.yaml`:
 
   - To obtain the client secret, Create a ticket in [Keycloak Client registration](https://jira.diamond.ac.uk/servicedesk/customer/portal/5/create/176) with  
     - Hostname: `https://{{ instrument }}-blueapi.diamond.ac.uk`
@@ -38,7 +37,7 @@ To request an Ingress for `{{ instrument }}-blueapi.diamond.ac.uk` in the `{{ cl
     - ClientId: `{{ instrument }}Blueapi`
     - GPG Public Key: Please follow docs [here](https://dev-guide.diamond.ac.uk/authn/how-tos/request-a-registration-with-keycloak/)
 
-    You may receive seperate credentials for the identity, identity-dev, and identity-test Diamond Keycloak services. By default use the identity credentials.
+    You may receive separate credentials for the identity, identity-dev, and identity-test Diamond Keycloak services. By default use the identity credentials.
 
   - To generate a cookie secret, refer to the [OAuth2 Proxy documentation](https://oauth2-proxy.github.io/oauth2-proxy/configuration/overview#generating-a-cookie-secret).
 
@@ -54,4 +53,15 @@ To request an Ingress for `{{ instrument }}-blueapi.diamond.ac.uk` in the `{{ cl
 
   And place each in the appropriate field in `templates/secret.yaml`
 
-{% endif %}
+5. If tiled insertion is enabled, request a service account through [Keycloak Client registration](https://jira.diamond.ac.uk/servicedesk/customer/portal/5/create/176) with the following hardcoded claims:
+  - Applicaiton Hostname: tiled.diamond.ac.uk
+  - Keycloak Environment: Dev/Test and Production
+  - Client ID: {{ instrument }}TiledWriter
+  - Claim Name: `beamline`
+  - Claim Value: `{{ instrument }}`
+  - Claim JSON Type: `String`
+  - Audience: `tiled-writer`
+
+  You may receive separate credentials for the identity, identity-dev, and identity-test Diamond Keycloak services. By default use the identity credentials.
+  
+  The client secret for the {{ instrument }}TiledWriter should be added to `templates/secret.yaml` -> `tiled-writer-secret`.

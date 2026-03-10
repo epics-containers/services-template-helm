@@ -146,6 +146,13 @@ numtracker_enabled:
   when: >-
     {{ auth_enabled }}
 
+tiled_enabled:
+  help: Enable tiled insertion for blueapi.
+  default: False
+  type: bool
+  when: >-
+    {{ auth_enabled }}
+
 instrument:
   type: str
   help: |

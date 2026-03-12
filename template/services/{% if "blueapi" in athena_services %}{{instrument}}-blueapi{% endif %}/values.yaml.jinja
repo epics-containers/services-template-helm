@@ -60,12 +60,14 @@ blueapi:
       url: https://numtracker-staging.diamond.ac.uk/graphql
     {% endif %}
     scratch:
-      root: /dls_sw/{{ instrument }}/software/blueapi/scratch
+      root: /workspaces
       repositories:
         - name: dodal
           remote_url: https://github.com/DiamondLightSource/dodal.git
   initContainer:
     enabled: true
+    persistentVolume:
+      enabled: true
 
 {% if auth_enabled %}
 oauth2:

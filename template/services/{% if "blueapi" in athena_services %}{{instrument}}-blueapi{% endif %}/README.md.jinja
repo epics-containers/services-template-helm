@@ -29,7 +29,7 @@ To request an Ingress for `{{ instrument }}-blueapi.diamond.ac.uk` in the `{{ cl
 
   **Note:** `numtracker-staging` will be replaced with `numtracker`. See [this issue](https://github.com/epics-containers/services-template-helm/issues/97) for more details.
 
-4. If blueapi auth is enabled, Add the client secret and cookie secret to `templates/secret.yaml`:
+4. If blueapi auth is enabled, add the client secret and cookie secret to `templates/secret.yaml`:
 
   - To obtain the client secret, Create a ticket in [Keycloak Client registration](https://jira.diamond.ac.uk/servicedesk/customer/portal/5/create/176) with  
     - Hostname: `https://{{ instrument }}-blueapi.diamond.ac.uk`

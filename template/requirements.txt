@@ -1,4 +1,4 @@
 uv
-urllib3<2.4.0
+urllib3<2.6.4
 Kodman
 ibek>=3.3.4

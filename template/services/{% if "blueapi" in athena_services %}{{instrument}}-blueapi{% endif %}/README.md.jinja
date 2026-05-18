@@ -19,7 +19,7 @@ To request an Ingress for `{{ instrument }}-blueapi.diamond.ac.uk` in the `{{ cl
  
   For configuration details, see the [numtracker documentation](https://github.com/diamondLightSource/numtracker#configure-1).
 
-  Example configuration, please adapt this to beamlines requirements
+  Example configuration, please adapt this to beamlines requirements. The values in curly braces are intentional placeholders that will be populated by numtracker. They do not need to be manually replaced.
   ```
   numtracker client configure {{instrument}} \
   --directory '/dls/{instrument}/data/{year}/{visit}' \

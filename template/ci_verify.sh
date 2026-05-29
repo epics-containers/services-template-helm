@@ -58,10 +58,10 @@ else
     DIFF_BASE=$(git hash-object -t tree /dev/null)
 fi
 
-# Get changed services (excluding values.yaml)
+# Get changed services (excluding global values.yaml)
 CHANGED_SERVICES=$(git diff --name-only "$DIFF_BASE" HEAD \
   | grep '^services/' \
-  | grep -v 'values.yaml' \
+  | grep -v '^services/values.yaml' \
   | cut -d/ -f2 \
   | sort -u)
 

@@ -17,7 +17,7 @@ repos:
         entry: |
           bash -c "
             if [[ -f synoptic/techui-support/techui-support.yaml ]]; then
-              uvx techui-builder synoptic/techui.yaml
+              uvx techui-builder==0.6.8a2 synoptic/techui.yaml
             fi"
         files: ^synoptic/
         pass_filenames: false

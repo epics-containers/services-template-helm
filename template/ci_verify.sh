@@ -30,7 +30,7 @@ uv pip install -r requirements.txt
 # run pre-commit checking which tool versions will be used.
 uvx pre-commit install
 uvx ibek --version
-uvx techui-builder --version
+uvx techui-builder==0.7.2 --version
 uvx pre-commit run --all-files --show-diff-on-failure
 
 # Verify the IOC instance definitions

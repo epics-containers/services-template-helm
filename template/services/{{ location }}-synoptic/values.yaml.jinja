@@ -8,13 +8,12 @@ ioc-instance:
 
   volumeMounts:
     - mountPath: /epics/opis-pvcs
-      name: opis-volume
+      name: opis-pvcs-volume
 
   volumes:
-    - name: opis-volume
+    - name: opis-pvcs-volume
       persistentVolumeClaim:
-        {{- $opisClaim := default (print $domain "-opi-claim") .Values.opisClaim -}}
-        claimName: {{ $opisClaim }}
+        claimName: {{ domain }}-opi-claim
 
   initContainers:
     - name: generate-synoptic-extras

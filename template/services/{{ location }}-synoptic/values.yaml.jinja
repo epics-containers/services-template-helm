@@ -1,5 +1,7 @@
 # yaml-language-server: $schema=../../.helm-shared/values.schema.json
 
+{%- set opisClaim = opisClaim | default(domain ~ "-opi-claim", true) -%}
+
 ioc-instance:
   # use a lightweight IOC because epics-base has no ioc.dbd or start.sh
   image: ghcr.io/epics-containers/ioc-asyn-runtime:4.45ec3
@@ -13,7 +15,7 @@ ioc-instance:
   volumes:
     - name: opis-pvcs-volume
       persistentVolumeClaim:
-        claimName: {{ domain }}-opi-claim
+        claimName: {{ opisClaim }}
 
   initContainers:
     - name: generate-synoptic-extras

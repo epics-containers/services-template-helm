@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../.helm-shared/values.schema.json
 
-{%- set opisClaim = opisClaim | default(domain ~ "-opi-claim", true) -%}
+{%- set opisClaim = opisClaim | default(domain ~ "-opi-claim", true) %}
 
 ioc-instance:
   # use a lightweight IOC because epics-base has no ioc.dbd or start.sh

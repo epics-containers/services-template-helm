@@ -51,10 +51,10 @@ repos:
         files: ^services/
         pass_filenames: false
 
-      # Verify vendored runtime-support integrity locally (mirrors CI). Runs
-      # for every instance that has a runtime-lock.yaml. DIRTY entries are
-      # allowed locally so work in progress does not block committing; CI on
-      # main is the hard gate.
+      # Verify vendored runtime-support integrity locally (mirrors CI). Runs for
+      # every instance with a runtime-lock.yaml; a hash mismatch FAILS the hook
+      # (vendored files are DO-NOT-EDIT). To deliberately diverge, mark the lock
+      # entry 'DIRTY # <reason>'; to try a throwaway edit, 'git commit --no-verify'.
       - id: ibek-pattern-check
         name: check vendored runtime-support against runtime-lock.yaml
         language: system
@@ -66,7 +66,7 @@ repos:
               instance=$(dirname "${lock}")
               uvx --python 3.13 \
                 --from "git+https://github.com/epics-containers/ibek@runtime-pattern-vendoring" \
-                ibek pattern check "${instance}" --allow-dirty
+                ibek pattern check "${instance}"
             done'
         files: ^services/
         pass_filenames: false

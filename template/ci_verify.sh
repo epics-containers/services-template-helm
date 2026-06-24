@@ -40,19 +40,15 @@ uvx pre-commit run --all-files --show-diff-on-failure
 if [[ -n "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}" ]]; then
     # GitLab MR
     DIFF_BASE="origin/${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}"
-    TARGET_BRANCH="${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}"
 elif [[ -n "${GITHUB_BASE_REF:-}" ]]; then
     # GitHub PR
     DIFF_BASE="origin/${GITHUB_BASE_REF}"
-    TARGET_BRANCH="${GITHUB_BASE_REF}"
 elif git rev-parse HEAD~1 >/dev/null 2>&1; then
-    # normal push - the branch we are on is the target
+    # normal push
     DIFF_BASE="HEAD~1"
-    TARGET_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")"
 else
     # first commit
     DIFF_BASE=$(git hash-object -t tree /dev/null)
-    TARGET_BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")"
 fi
 
 # Verify vendored runtime-support integrity for every instance
@@ -61,17 +57,12 @@ fi
 # root recording the sha256 of every vendored file. 'ibek pattern check'
 # verifies the on-disk files still match the lock.
 #
-# Branch policy:
-#   - landing on the main branch a hash mismatch is a hard failure (vendored
-#     files must never be hand-edited on main).
-#   - on feature branches we allow DIRTY entries (IBEK_ALLOW_DIRTY / --allow-dirty)
-#     so work-in-progress edits don't block the branch; the mismatch must be
-#     resolved (via 'ibek pattern update'/'restore') before merge to main.
-if [[ "${TARGET_BRANCH}" == "main" ]]; then
-    ALLOW_DIRTY=""
-else
-    ALLOW_DIRTY="--allow-dirty"
-fi
+# A hash mismatch is ALWAYS a hard failure, on every branch: vendored files are
+# DO-NOT-EDIT. To deliberately diverge from a pristine vendored file, mark its
+# entry in runtime-lock.yaml as 'DIRTY # <reason>' -- a visible, committed opt-in
+# that 'ibek pattern check' tolerates. To merely try a throwaway edit, bypass with
+# 'git commit --no-verify' and tolerate the red branch CI (a red check does not
+# block deploying the branch to a cluster).
 
 shopt -s nullglob
 for lock in ${ROOT}/services/*/runtime-lock.yaml; do
@@ -86,7 +77,7 @@ for lock in ${ROOT}/services/*/runtime-lock.yaml; do
     fi
 
     echo "Checking vendored runtime-support for ${instance_name}"
-    ibek pattern check "services/${instance_name}" ${ALLOW_DIRTY}
+    ibek pattern check "services/${instance_name}"
 done
 shopt -u nullglob
 

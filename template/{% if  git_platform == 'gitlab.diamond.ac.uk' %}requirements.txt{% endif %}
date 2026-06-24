@@ -1,2 +1,4 @@
 urllib3<2.4.0
 Kodman
+# TODO: switch to a released ibek once epics-containers/ibek#353 merges
+ibek @ git+https://github.com/epics-containers/ibek@runtime-pattern-vendoring

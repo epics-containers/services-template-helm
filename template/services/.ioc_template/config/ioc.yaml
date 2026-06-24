@@ -1,6 +1,36 @@
-# yaml-language-server: $schema=https://github.com/epics-containers/ioc-template-example/releases/download/4.4.7/ibek.ioc.schema.json
+# yaml-language-server: $schema=../ioc.schema.json
 
-# TODO replace above with the generic IOC schema this IOC is based on
+# This is the runtime configuration for this IOC instance and is the only
+# input mounted into the running container (config/ is the K8s ConfigMap).
+#
+# The $schema above points at the per-instance ioc.schema.json generated at the
+# instance root. It is rebuilt by 'ibek pattern schema services/<instance>' (a
+# pre-commit hook does this for you) and combines:
+#   - the base IOC schema
+#   - every vendored pattern's entity models
+#   - any local *.ibek.support.yaml dropped into this config/ folder
+#
+# To add vendored runtime support (proto/db/entity models from a central
+# library) run, from the repo root:
+#
+#   ibek pattern add <library>:<pattern>@<tag> services/<instance>
+#
+# e.g. ibek pattern add ibek-runtime-streamdevice:lakeshore340@0.1.0 services/<instance>
+#
+# This writes the vendored files into this config/ folder, records their hashes
+# in ../runtime-lock.yaml and regenerates ../ioc.schema.json. Vendored files
+# carry a "DO NOT EDIT" header and must not be hand-edited (CI verifies their
+# hashes via 'ibek pattern check'). Use 'ibek pattern update' / 'restore' to
+# manage them.
+#
+# For local beamline-specific support, drop a plain editable
+# '*.ibek.support.yaml' (plus any DB/proto it needs) directly into this config/
+# folder. Local support is NOT recorded in the lock file and is automatically
+# merged into ../ioc.schema.json, so you may freely edit it and then add
+# matching entities below.
+
+# TODO replace the schema target above if this IOC is based on a specific
+# generic IOC schema.
 ioc_name: "{{ _global.get_env('IOC_NAME') }}"
 
 description: REPLACE_WITH_DESCRIPTION
@@ -9,7 +39,7 @@ entities:
   - type: epics.EpicsEnvSet
     name: EPICS_TZ
     value: GMT0BST
-    
+
   - type: epics.EpicsEnvSet
     name: STREAM_PROTOCOL_PATH
     value: /epics/runtime/protocol/

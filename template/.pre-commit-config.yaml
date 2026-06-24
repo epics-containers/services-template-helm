@@ -7,6 +7,12 @@ repos:
         exclude: ^Charts/|/templates/
       - id: check-merge-conflict
       # - id: end-of-file-fixer
+      #
+      # NOTE: any formatter / whitespace / EOL hook (e.g. end-of-file-fixer,
+      # trailing-whitespace, a YAML formatter) added in future MUST exclude the
+      # vendored files listed in each services/<instance>/runtime-lock.yaml.
+      # Those files are content-addressed by sha256 in the lock and reformatting
+      # them would change their hashes and break 'ibek pattern check'.
 
   - repo: local
     hooks:
@@ -24,16 +30,43 @@ repos:
 
   - repo: local
     hooks:
-      - id: ibek-runtime-schema
-        name: generate schema for local ibek entities
+      # Regenerate the per-instance ioc.schema.json (and rewrite the
+      # config/ioc.yaml $schema header) for every instance that has a
+      # config/ioc.yaml. The schema combines the base IOC schema, every
+      # vendored pattern's entity models and any local *.ibek.support.yaml
+      # dropped into config/.
+      - id: ibek-ioc-schema
+        name: generate per-instance ioc.schema.json
         language: system
-        # only do this if there are ibek runtime support files present
+        # TODO: drop the --from git pin once epics-containers/ibek#353 releases
+        #       and 'ibek pattern' is available on the released ibek (PyPI).
         entry: |
-          bash -c "
-            support=$(find ibek-runtime-support/ -name '*.ibek.support.yaml')
-            if [[ -n ${support} ]]; then
-              uvx --python 3.13 ibek ioc generate-schema ${support} \
-                --output ibek-runtime-support/runtime.schema.json
-            fi"
-        files: ^ibek-runtime-support/
+          bash -c '
+            for ioc in services/*/config/ioc.yaml; do
+              instance=$(dirname "$(dirname "${ioc}")")
+              uvx --python 3.13 \
+                --from "git+https://github.com/epics-containers/ibek@runtime-pattern-vendoring" \
+                ibek pattern schema "${instance}"
+            done'
+        files: ^services/
+        pass_filenames: false
+
+      # Verify vendored runtime-support integrity locally (mirrors CI). Runs
+      # for every instance that has a runtime-lock.yaml. DIRTY entries are
+      # allowed locally so work in progress does not block committing; CI on
+      # main is the hard gate.
+      - id: ibek-pattern-check
+        name: check vendored runtime-support against runtime-lock.yaml
+        language: system
+        # TODO: drop the --from git pin once epics-containers/ibek#353 releases
+        #       and 'ibek pattern' is available on the released ibek (PyPI).
+        entry: |
+          bash -c '
+            for lock in services/*/runtime-lock.yaml; do
+              instance=$(dirname "${lock}")
+              uvx --python 3.13 \
+                --from "git+https://github.com/epics-containers/ibek@runtime-pattern-vendoring" \
+                ibek pattern check "${instance}" --allow-dirty
+            done'
+        files: ^services/
         pass_filenames: false

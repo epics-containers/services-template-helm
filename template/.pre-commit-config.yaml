@@ -42,12 +42,15 @@ repos:
         #       and 'ibek pattern' is available on the released ibek (PyPI).
         entry: |
           bash -c '
+            shopt -s nullglob
+            rc=0
             for ioc in services/*/config/ioc.yaml; do
               instance=$(dirname "$(dirname "${ioc}")")
               uvx --python 3.13 \
                 --from "git+https://github.com/epics-containers/ibek@runtime-pattern-vendoring" \
-                ibek pattern schema "${instance}"
-            done'
+                ibek pattern schema "${instance}" || rc=1
+            done
+            exit "${rc}"'
         files: ^services/
         pass_filenames: false
 
@@ -62,11 +65,14 @@ repos:
         #       and 'ibek pattern' is available on the released ibek (PyPI).
         entry: |
           bash -c '
+            shopt -s nullglob
+            rc=0
             for lock in services/*/runtime-lock.yaml; do
               instance=$(dirname "${lock}")
               uvx --python 3.13 \
                 --from "git+https://github.com/epics-containers/ibek@runtime-pattern-vendoring" \
-                ibek pattern check "${instance}"
-            done'
+                ibek pattern check "${instance}" || rc=1
+            done
+            exit "${rc}"'
         files: ^services/
         pass_filenames: false

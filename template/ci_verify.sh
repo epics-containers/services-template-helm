@@ -71,7 +71,7 @@ for lock in ${ROOT}/services/*/runtime-lock.yaml; do
 
     # honour .ci_skip_checks
     checks=${ROOT}/.ci_skip_checks
-    if [[ -f ${checks} ]] && grep -q "${instance_name}" ${checks}; then
+    if [[ -f "${checks}" ]] && grep -Fxq -- "${instance_name}" "${checks}"; then
         echo "Skipping pattern check for ${instance_name}"
         continue
     fi
@@ -117,7 +117,7 @@ do
 
     # skip services appearing in .ci_skip_checks
     checks=${ROOT}/.ci_skip_checks
-    if [[ -f ${checks} ]] && grep -q ${service_name} ${checks}; then
+    if [[ -f "${checks}" ]] && grep -Fxq -- "${service_name}" "${checks}"; then
         echo "Skipping ${service_name}"
         continue
     fi

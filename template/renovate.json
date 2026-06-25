@@ -29,9 +29,6 @@
       "managerFilePatterns": [
         "/services/.*/runtime-lock\\.yaml$/"
       ],
-      "fileMatch": [
-        "services/.*/runtime-lock\\.yaml$"
-      ],
       "matchStrings": [
         "version:\\s*[\"']?(?<currentValue>[^\"'\\s]+)[\"']?\\s*[\\r\\n]+source:\\s*(?:https?://)?(?:github\\.com/)?(?<depName>[^@\\s\"']+/[^@\\s\"']+?)(?:@[^\\s\"']+)?\\s*$"
       ],

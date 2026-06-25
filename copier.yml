@@ -33,6 +33,44 @@ _migrations:
       rm -rf .helm-shared/templates
       mv .backup-templates .helm-shared/templates
 
+  # Adopt 'ibek pattern' runtime-support vendoring. Retires the per-repo
+  # ibek-runtime-support/ directory, its global runtime.schema.json hook, the
+  # per-instance config/runtime.yaml stub and the ibek-runtime-streamdevice
+  # git submodule. Runtime support is now vendored per-instance into
+  # config/ via 'ibek pattern add' (see README "Vendoring runtime support").
+  #
+  # NOTE: this migration only removes the retired artefacts. Any vendored
+  # files / symlinks that previously lived under config/ (pointing into
+  # ibek-runtime-support/ or the streamdevice submodule) must be
+  # re-materialised by re-running, for each affected instance:
+  #     ibek pattern add <library>:<pattern>@<tag> services/<instance>
+  - version: 6.0.0
+    when: "{{ _stage == 'before' }}"
+    command: |
+      echo "Migrating $(pwd) to Template v${VERSION_CURRENT}: runtime-support vendoring"
+
+      # drop the per-instance runtime.yaml stub (purpose merged into ioc.yaml)
+      for r in services/*/config/runtime.yaml; do
+          [ -e "$r" ] || continue
+          git rm -f "$r" 2>/dev/null || rm -f "$r"
+      done
+
+      # retire the per-repo runtime-support directory + global schema
+      rm -rf ibek-runtime-support
+
+      # remove the retired ibek-runtime-streamdevice submodule, if present
+      submodule="ibek-runtime-support/ibek-runtime-streamdevice"
+      if [ -f .gitmodules ] && git config -f .gitmodules --get-regexp "submodule\..*\.path" 2>/dev/null \
+            | grep -q "${submodule}"; then
+          git submodule deinit -f "${submodule}" 2>/dev/null || true
+          git rm -f "${submodule}" 2>/dev/null || true
+          rm -rf ".git/modules/${submodule}" 2>/dev/null || true
+          # tidy .gitmodules in case the rm above left an empty stanza
+          git config -f .gitmodules --remove-section "submodule.${submodule}" 2>/dev/null || true
+          # remove .gitmodules entirely if it is now empty
+          [ -s .gitmodules ] || rm -f .gitmodules
+      fi
+
 _subdirectory: "template"
 
 _preserve_symlinks: true

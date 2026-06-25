@@ -14,11 +14,14 @@ rm -rf ${ROOT}/.ci_work/
 mkdir -p ${ROOT}/.ci_work
 
 # Perform pre-commit checks to ensure techui-builder has validated the synoptic
-# and that the ibek-runtme-support schema is up to date
+# and that each instance's ioc.schema.json is up to date.
 ################################################################################
 
 
 cd ${ROOT}
+# techui-support is a submodule; initialise it for the synoptic checks.
+# (the old ibek-runtime-streamdevice submodule has been retired in favour of
+#  'ibek pattern' vendoring, so no submodule init is required for runtime support)
 git submodule update --init
 
 pip install uv
@@ -29,21 +32,11 @@ uv pip install -r requirements.txt
 
 # run pre-commit checking which tool versions will be used.
 uvx pre-commit install
-uvx ibek --version
+ibek --version
 uvx techui-builder==0.7.2 --version
 uvx pre-commit run --all-files --show-diff-on-failure
 
-# Verify the IOC instance definitions
-################################################################################
-# if a docker provider is specified, use it
-if [[ $DOCKER_PROVIDER ]]; then
-    docker=$DOCKER_PROVIDER
-# Otherwise use docker if available else use podman
-else
-    if ! docker version &>/dev/null; then docker=podman; else docker=docker; fi
-fi
-
-# Determine diff base
+# Determine diff base (also used later to pick the changed services)
 if [[ -n "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}" ]]; then
     # GitLab MR
     DIFF_BASE="origin/${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}"
@@ -56,6 +49,46 @@ elif git rev-parse HEAD~1 >/dev/null 2>&1; then
 else
     # first commit
     DIFF_BASE=$(git hash-object -t tree /dev/null)
+fi
+
+# Verify vendored runtime-support integrity for every instance
+################################################################################
+# Each instance that has vendored patterns carries a runtime-lock.yaml at its
+# root recording the sha256 of every vendored file. 'ibek pattern check'
+# verifies the on-disk files still match the lock.
+#
+# A hash mismatch is ALWAYS a hard failure, on every branch: vendored files are
+# DO-NOT-EDIT. To deliberately diverge from a pristine vendored file, mark its
+# entry in runtime-lock.yaml as 'DIRTY # <reason>' -- a visible, committed opt-in
+# that 'ibek pattern check' tolerates. To merely try a throwaway edit, bypass with
+# 'git commit --no-verify' and tolerate the red branch CI (a red check does not
+# block deploying the branch to a cluster).
+
+shopt -s nullglob
+for lock in ${ROOT}/services/*/runtime-lock.yaml; do
+    instance_dir=$(dirname "${lock}")
+    instance_name=$(basename "${instance_dir}")
+
+    # honour .ci_skip_checks
+    checks=${ROOT}/.ci_skip_checks
+    if [[ -f "${checks}" ]] && grep -Fxq -- "${instance_name}" "${checks}"; then
+        echo "Skipping pattern check for ${instance_name}"
+        continue
+    fi
+
+    echo "Checking vendored runtime-support for ${instance_name}"
+    ibek pattern check "services/${instance_name}"
+done
+shopt -u nullglob
+
+# Verify the IOC instance definitions
+################################################################################
+# if a docker provider is specified, use it
+if [[ $DOCKER_PROVIDER ]]; then
+    docker=$DOCKER_PROVIDER
+# Otherwise use docker if available else use podman
+else
+    if ! docker version &>/dev/null; then docker=podman; else docker=docker; fi
 fi
 
 # Get changed services (excluding global values.yaml)
@@ -84,7 +117,7 @@ do
 
     # skip services appearing in .ci_skip_checks
     checks=${ROOT}/.ci_skip_checks
-    if [[ -f ${checks} ]] && grep -q ${service_name} ${checks}; then
+    if [[ -f "${checks}" ]] && grep -Fxq -- "${service_name}" "${checks}"; then
         echo "Skipping ${service_name}"
         continue
     fi
@@ -123,12 +156,14 @@ do
 
         # This will fail and exit if the ioc.yaml is invalid
         # Also show the startup script we just generated (and verify it exists)
+        # 'ibek runtime generate2 /config' reads the whole mounted config folder
+        # (ioc.yaml + any vendored/local *.ibek.support.yaml, proto and db) and
+        # places the generated runtime (st.cmd, proto, db) under /epics/runtime.
         $docker run --rm --entrypoint bash \
             -v ${service}/config:/config:z \
             ${image} \
             -c "
-            ibek runtime generate /config/ioc.yaml \
-              /epics/ibek-defs/*.ibek.support.yaml  &&
+            ibek runtime generate2 /config  &&
             cat /epics/runtime/st.cmd
             "
 

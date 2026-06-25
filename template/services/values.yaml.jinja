@@ -14,12 +14,11 @@ shared: &shared
   hostNetwork: true
 
   # running as ixxdetector account uid,gid gives access to /dls/ixx/data
-  podSecurityContext:
+  securityContext:
+    allowPrivilegeEscalation: false
     # runAsUser: 37988
     # runAsGroup: 37988
 
-  securityContext:
-    allowPrivilegeEscalation: false
 
   # affinity chooses which servers to run on
   # Accelerator must set this for CIAs, Beamlines don't need it

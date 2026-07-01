@@ -33,7 +33,7 @@ uv pip install -r requirements.txt
 # run pre-commit checking which tool versions will be used.
 uvx pre-commit install
 uvx ibek --version
-uvx techui-builder==0.7.4 --version
+uvx techui-builder==0.7.5 --version
 uvx pre-commit run --all-files --show-diff-on-failure
 
 # Determine diff base (also used later to pick the changed services)

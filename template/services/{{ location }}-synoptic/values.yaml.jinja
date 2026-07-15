@@ -10,12 +10,14 @@ ioc-instance:
 
   volumeMounts:
     - mountPath: /opis
-      name: opis-pvcs-volume
+      name: opis-volume
+      readOnly: true
 
-  volumes:
-    - name: opis-pvcs-volume
-      persistentVolumeClaim:
-        claimName: {{ opisClaim }}
+#  volumes:
+#    - name: opis-pvcs-volume
+#      persistentVolumeClaim:
+#        claimName: {{ opisClaim }}
+#        readOnly: true
 
   initContainers:
     - name: generate-synoptic-extras

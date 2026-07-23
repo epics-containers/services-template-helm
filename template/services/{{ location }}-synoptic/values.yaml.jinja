@@ -34,8 +34,8 @@ ioc-instance:
           rm -rf /epics/opi/*
           cp -r /data/synoptic-git/synoptic/* /epics/opi
           cd /opis/{{ location }}-synoptic
-          uvx --prerelease allow --constraints /data/synoptic-git/requirements.txt techui-builder generate-jsonmap index.bob --output /epics/opi
-          uvx --prerelease allow --constraints /data/synoptic-git/requirements.txt techui-builder status techui.yaml --output /epics/opi
+          uvx --prerelease allow --constraints /data/synoptic-git/requirements.txt techui-builder@latest generate-jsonmap index.bob --output /epics/opi
+          uvx --prerelease allow --constraints /data/synoptic-git/requirements.txt techui-builder@latest status techui.yaml --output /epics/opi
 
   # don't use the ioc-instance livenesProbe, preStop which dont exist in fastcs image.
   livenessExecutable: ""

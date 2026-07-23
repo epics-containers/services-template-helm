@@ -21,7 +21,7 @@ repos:
         entry: |
           bash -c "
             if [[ -f synoptic/techui-support/techui-support.yaml ]]; then
-              uvx --constraints requirements.txt techui-builder build synoptic/techui.yaml
+              uvx --prerelease allow --constraints requirements.txt techui-builder build synoptic/techui.yaml
             fi"
         files: ^synoptic/
         pass_filenames: false

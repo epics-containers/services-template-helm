@@ -91,6 +91,17 @@ else
     if ! docker version &>/dev/null; then docker=podman; else docker=docker; fi
 fi
 
+# On CI runners the working tree is on local disk so :z SELinux relabelling
+# works fine. On developer workstations the tree may sit on NFS which does not
+# support xattr; disable SELinux labelling instead.
+if [[ -n "${CI:-}" ]]; then
+    vol_z=":z"
+    selinux_opt=""
+else
+    vol_z=""
+    selinux_opt="--security-opt label=disable"
+fi
+
 # Get changed services (excluding global values.yaml)
 CHANGED_SERVICES=$(git diff --name-only "$DIFF_BASE" HEAD \
   | grep '^services/' \
@@ -124,8 +135,9 @@ do
 
     echo "Validating helm chart for ${service_name}"
     $docker run --rm --entrypoint bash \
-        -v ${ROOT}/.ci_work:/services:z \
-        -v ${ROOT}/.helm-shared:/.helm-shared:z \
+        $selinux_opt \
+        -v "${ROOT}/.ci_work:/services${vol_z}" \
+        -v "${ROOT}/.helm-shared:/.helm-shared${vol_z}" \
         alpine/helm:3.14.3 \
         -c "
            helm dependency update /services/$service_name &&
@@ -156,7 +168,8 @@ do
         # hardware connections and the IOC binary launch.
         # Requires ioc-template start.sh to support the --test flag.
         $docker run --rm --entrypoint bash \
-            -v "${service}/config:/epics/ioc/config:z" \
+            $selinux_opt \
+            -v "${service}/config:/epics/ioc/config${vol_z}" \
             "${image}" \
             -c "
             /epics/ioc/start.sh --test &&

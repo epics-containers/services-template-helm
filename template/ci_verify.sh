@@ -156,8 +156,8 @@ do
         # hardware connections and the IOC binary launch.
         # Requires ioc-template start.sh to support the --test flag.
         $docker run --rm --entrypoint bash \
-            -v ${service}/config:/epics/ioc/config:z \
-            ${image} \
+            -v "${service}/config:/epics/ioc/config:z" \
+            "${image}" \
             -c "
             /epics/ioc/start.sh --test &&
             cat /epics/runtime/st.cmd

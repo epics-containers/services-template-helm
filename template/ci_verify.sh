@@ -151,19 +151,15 @@ do
         runtime=/tmp/ioc-runtime/$(basename ${service})
         mkdir -p ${runtime}
 
-        # avoid issues with auto-gen genicam pvi files (ioc-adaravis only)
-        sed -i s/AutoADGenICam/ADGenICam/ ${service}/config/ioc.yaml
-
-        # This will fail and exit if the ioc.yaml is invalid
-        # Also show the startup script we just generated (and verify it exists)
-        # 'ibek runtime generate2 /config' reads the whole mounted config folder
-        # (ioc.yaml + any vendored/local *.ibek.support.yaml, proto and db) and
-        # places the generated runtime (st.cmd, proto, db) under /epics/runtime.
+        # Run the full startup sequence in test mode: generates all runtime
+        # assets (st.cmd, db, pvi) exactly as in production, but skips
+        # hardware connections and the IOC binary launch.
+        # Requires ioc-template start.sh to support the --test flag.
         $docker run --rm --entrypoint bash \
-            -v ${service}/config:/config:z \
+            -v ${service}/config:/epics/ioc/config:z \
             ${image} \
             -c "
-            ibek runtime generate2 /config  &&
+            /epics/ioc/start.sh --test &&
             cat /epics/runtime/st.cmd
             "
 

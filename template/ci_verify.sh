@@ -91,6 +91,17 @@ else
     if ! docker version &>/dev/null; then docker=podman; else docker=docker; fi
 fi
 
+# On CI runners the working tree is on local disk so :z SELinux relabelling
+# works fine. On developer workstations the tree may sit on NFS which does not
+# support xattr; disable SELinux labelling instead.
+if [[ -n "${CI:-}" ]]; then
+    vol_z=":z"
+    selinux_opt=""
+else
+    vol_z=""
+    selinux_opt="--security-opt label=disable"
+fi
+
 # Get changed services (excluding global values.yaml)
 CHANGED_SERVICES=$(git diff --name-only "$DIFF_BASE" HEAD \
   | grep '^services/' \
@@ -124,8 +135,9 @@ do
 
     echo "Validating helm chart for ${service_name}"
     $docker run --rm --entrypoint bash \
-        -v ${ROOT}/.ci_work:/services:z \
-        -v ${ROOT}/.helm-shared:/.helm-shared:z \
+        $selinux_opt \
+        -v "${ROOT}/.ci_work:/services${vol_z}" \
+        -v "${ROOT}/.helm-shared:/.helm-shared${vol_z}" \
         alpine/helm:3.14.3 \
         -c "
            helm dependency update /services/$service_name &&
@@ -151,19 +163,16 @@ do
         runtime=/tmp/ioc-runtime/$(basename ${service})
         mkdir -p ${runtime}
 
-        # avoid issues with auto-gen genicam pvi files (ioc-adaravis only)
-        sed -i s/AutoADGenICam/ADGenICam/ ${service}/config/ioc.yaml
-
-        # This will fail and exit if the ioc.yaml is invalid
-        # Also show the startup script we just generated (and verify it exists)
-        # 'ibek runtime generate2 /config' reads the whole mounted config folder
-        # (ioc.yaml + any vendored/local *.ibek.support.yaml, proto and db) and
-        # places the generated runtime (st.cmd, proto, db) under /epics/runtime.
+        # Run the full startup sequence in test mode: generates all runtime
+        # assets (st.cmd, db, pvi) exactly as in production, but skips
+        # hardware connections and the IOC binary launch.
+        # Requires ioc-template start.sh to support the --test flag.
         $docker run --rm --entrypoint bash \
-            -v ${service}/config:/config:z \
-            ${image} \
+            $selinux_opt \
+            -v "${service}/config:/epics/ioc/config${vol_z}" \
+            "${image}" \
             -c "
-            ibek runtime generate2 /config  &&
+            /epics/ioc/start.sh --test &&
             cat /epics/runtime/st.cmd
             "
 

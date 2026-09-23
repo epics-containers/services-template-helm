@@ -7,6 +7,8 @@ on:
 jobs:
   render:
     # render the template with each answers file and run the generated CI
+    # avoid running twice for same-repo PRs (push already covers them)
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

@@ -92,17 +92,27 @@ fi
 
 # Choose the services to check
 ################################################################################
-# On the default branch every service is checked, so a green default branch
-# means every service passes. On other branches only the services that differ
-# from the default branch (or the merge request target) are checked, so a
-# service that fails stays checked on that branch until it passes. Outside CI,
-# or if the target cannot be fetched, every service is checked.
+# A manually-run pipeline always checks every service, so it can be used to
+# sweep the whole repo on demand. A push to the default branch checks only
+# what that push changed, so a green run means that push is good, not that
+# every service still is. A branch or merge request checks what has changed
+# since the default branch or the MR/PR target. Anything else -- outside CI,
+# or a base commit that cannot be fetched (a new branch, a force push) --
+# checks every service, since there is nothing to safely diff against.
 target=${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-${GITHUB_BASE_REF:-${CI_DEFAULT_BRANCH:-}}}
 branch=${CI_COMMIT_BRANCH:-${GITHUB_REF_NAME:-}}
-if [[ -n "${target}" && "${branch}" != "${target}" ]] &&
-    git fetch --quiet origin "${target}" &&
+default=${CI_DEFAULT_BRANCH:-}
+case ${CI_PIPELINE_SOURCE:-}${GITHUB_EVENT_NAME:-}/$branch/$default/$target in
+    web*|*workflow_dispatch*)  REF= ;;                       # manual full run: no base to diff from
+    */"$default"/"$default"/*) REF=$CI_COMMIT_BEFORE_SHA ;;  # default branch push: diff from just before this push
+    */*/*/?*)                  REF=$target ;;                # branch or MR: diff from its target
+    *)                         REF= ;;                       # fallback: nothing to compare against
+esac
+
+if [[ -n "${REF}" ]] &&
+    git fetch --quiet origin "${REF}" &&
     DIFF_BASE=$(git merge-base HEAD FETCH_HEAD); then
-    echo "Checking services changed since ${target} (${DIFF_BASE})"
+    echo "Checking services changed since ${REF} (${DIFF_BASE})"
     SERVICES=$(git diff --name-only "${DIFF_BASE}" HEAD -- services/ | cut -d/ -f2 | sort -u)
 else
     echo "Checking all services"

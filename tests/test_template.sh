@@ -19,4 +19,7 @@ git init --quiet
 git add --all
 git -c user.name=ci -c user.email=ci@example.com commit --quiet -m "rendered from template"
 
+# the rendered repo is standalone with no remote: do not let the outer CI's
+# PR variables make ci_verify.sh look for a base branch that does not exist
+unset GITHUB_BASE_REF CI_MERGE_REQUEST_TARGET_BRANCH_NAME
 bash ci_verify.sh

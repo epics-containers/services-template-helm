@@ -1,0 +1,7 @@
+# accelerator domain: no gateway and no Athena services
+domain: rf
+location: sr03c
+cluster_name: acastus
+cluster_namespace: accelerator
+git_platform: gitlab.diamond.ac.uk
+dls_technical_area: accelerator

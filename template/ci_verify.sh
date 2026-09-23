@@ -163,16 +163,26 @@ do
         runtime=/tmp/ioc-runtime/$(basename ${service})
         mkdir -p ${runtime}
 
-        # Run the full startup sequence in test mode: generates all runtime
-        # assets (st.cmd, db, pvi) exactly as in production, but skips
-        # hardware connections and the IOC binary launch.
-        # Requires ioc-template start.sh to support the --test flag.
-        $docker run --rm --entrypoint bash \
+        # Prefer start.sh --test (generates all runtime assets - st.cmd, db,
+        # pvi - exactly as in production, but skips hardware connections and
+        # the IOC binary launch).
+        # For released images without this test feature, fall back to a plain 
+        # 'ibek runtime generate2' which only renders the config and
+        # never touches start.sh or the IOC binary.
+        # Either way, wrap in 'timeout' so a stale image whose start.sh blocks forever
+        # (e.g. 'ibek ioc do-wait' with an unreachable IP) fails fast instead
+        # of hanging the job and quietly opening connections to real hardware.
+        timeout --kill-after=10s 60s $docker run --rm --entrypoint bash \
             $selinux_opt \
             -v "${service}/config:/epics/ioc/config${vol_z}" \
             "${image}" \
             -c "
-            /epics/ioc/start.sh --test &&
+            if grep -q -- '--test' /epics/ioc/start.sh; then
+                /epics/ioc/start.sh --test
+            else
+                echo 'start.sh has no --test support; falling back to ibek runtime generate2'
+                ibek runtime generate2 /epics/ioc/config
+            fi &&
             cat /epics/runtime/st.cmd
             "
 

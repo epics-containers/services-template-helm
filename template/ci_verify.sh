@@ -142,8 +142,38 @@ do
         continue
     fi
 
-    # Get the container image that this service uses from values.yaml if supplied
-    image=$(cat ${service}/values.yaml | sed -rn 's/^ +image: (.*)/\1/p')
+    # Get the IOC container image from values.yaml if supplied. values.yaml may
+    # list other images too (initContainers, extraContainers, sub-charts such
+    # as odin), so use ioc-instance.image when present, else the only image.
+    image=$(python - "${service}/values.yaml" <<'EOF'
+import sys
+import yaml
+
+def images(node):
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key == "image" and isinstance(value, str):
+                yield value
+            else:
+                yield from images(value)
+    elif isinstance(node, list):
+        for item in node:
+            yield from images(item)
+
+values = yaml.safe_load(open(sys.argv[1])) or {}
+ioc = values.get("ioc-instance")
+found = list(images(values))
+if isinstance(ioc, dict) and isinstance(ioc.get("image"), str):
+    print(ioc["image"])
+elif len(found) == 1:
+    print(found[0])
+elif found:
+    sys.exit(
+        f"{sys.argv[1]} lists several images {found}: set the IOC image in "
+        "ioc-instance.image or add the service to .ci_skip_checks"
+    )
+EOF
+)
 
     if [ -n "${image}" ]; then
         echo "Validating ${service} with ${image}"

@@ -36,21 +36,6 @@ uvx ibek --version
 uvx techui-builder --version
 uvx pre-commit run --all-files --show-diff-on-failure
 
-# Determine diff base (also used later to pick the changed services)
-if [[ -n "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-}" ]]; then
-    # GitLab MR
-    DIFF_BASE=$(git merge-base HEAD "origin/${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}")
-elif [[ -n "${GITHUB_BASE_REF:-}" ]]; then
-    # GitHub PR
-    DIFF_BASE=$(git merge-base HEAD "origin/${GITHUB_BASE_REF}")
-elif git rev-parse HEAD~1 >/dev/null 2>&1; then
-    # normal push
-    DIFF_BASE="HEAD~1"
-else
-    # first commit
-    DIFF_BASE=$(git hash-object -t tree /dev/null)
-fi
-
 # Verify vendored runtime-support integrity for every instance
 ################################################################################
 # Each instance that has vendored patterns carries a runtime-lock.yaml at its
@@ -105,19 +90,32 @@ else
     selinux_opt=""
 fi
 
-# Get changed services (excluding global values.yaml)
-CHANGED_SERVICES=$(git diff --name-only "$DIFF_BASE" HEAD \
-  | grep '^services/' \
-  | grep -v '^services/values.yaml' \
-  | cut -d/ -f2 \
-  | sort -u)
-
+# Choose the services to check
+################################################################################
+# On the default branch every service is checked, so a green default branch
+# means every service passes. On other branches only the services that differ
+# from the default branch (or the merge request target) are checked, so a
+# service that fails stays checked on that branch until it passes. Outside CI,
+# or if the target cannot be fetched, every service is checked.
+target=${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-${GITHUB_BASE_REF:-${CI_DEFAULT_BRANCH:-}}}
+branch=${CI_COMMIT_BRANCH:-${GITHUB_REF_NAME:-}}
+if [[ -n "${target}" && "${branch}" != "${target}" ]] &&
+    git fetch --quiet origin "${target}" &&
+    DIFF_BASE=$(git merge-base HEAD FETCH_HEAD); then
+    echo "Checking services changed since ${target} (${DIFF_BASE})"
+    SERVICES=$(git diff --name-only "${DIFF_BASE}" HEAD -- services/ | cut -d/ -f2 | sort -u)
+else
+    echo "Checking all services"
+    SERVICES=$(ls "${ROOT}/services")
+fi
 
 # Need to make sure values.yaml is included in the ci
 cp -L "${ROOT}/services/values.yaml" "${ROOT}/.ci_work/"
 
-# copy only the changed services to a temporary location to avoid dirtying the repo
-for svc in $CHANGED_SERVICES; do
+# copy the services to check to a temporary location to avoid dirtying the repo
+for svc in $SERVICES; do
+  # skip values.yaml and deleted services
+  [[ -d "${ROOT}/services/$svc" ]] || continue
   echo "Preparing service: $svc"
   cp -Lr "${ROOT}/services/$svc" "${ROOT}/.ci_work/"
 done

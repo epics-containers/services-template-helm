@@ -24,7 +24,8 @@ cd ${ROOT}
 #  'ibek pattern' vendoring, so no submodule init is required for runtime support)
 git submodule update --init
 
-pip install uv
+# install uv only if it is missing: a local pip may be unable to install it
+command -v uv >/dev/null || pip install uv
 # use python 3.13 to ensure latest pydantic
 uv venv --python 3.13 --clear
 source .venv/bin/activate

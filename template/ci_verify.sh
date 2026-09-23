@@ -6,7 +6,7 @@
 #
 # At present this will only work with IOCs because it uses ibek. To support
 # other future services that don't use ibek, we will need to add a standard
-# entrypoint for validating the config folder mounted at /config.
+# entrypoint for validating the config folder mounted at /epics/ioc/config.
 
 ROOT=$(realpath $(dirname ${0}))
 set -xe
@@ -97,7 +97,7 @@ fi
 if [[ -n "${CI:-}" ]]; then
     vol_z=":z"
     selinux_opt=""
-elif [[ $docker != "kodman" ]]; then
+elif [[ $(basename "${docker}") != "kodman" ]]; then
     vol_z=""
     selinux_opt="--security-opt label=disable"
 else
@@ -169,22 +169,29 @@ do
         # Prefer start.sh --test (generates all runtime assets - st.cmd, db,
         # pvi - exactly as in production, but skips hardware connections and
         # the IOC binary launch).
-        # For released images without this test feature, fall back to a plain 
+        # For released images without this test feature, fall back to a plain
         # 'ibek runtime generate2' which only renders the config and
         # never touches start.sh or the IOC binary.
-        # Either way, wrap in 'timeout' so a stale image whose start.sh blocks forever
-        # (e.g. 'ibek ioc do-wait' with an unreachable IP) fails fast instead
-        # of hanging the job and quietly opening connections to real hardware.
-        timeout --kill-after=10s 60s $docker run --rm --entrypoint bash \
+        # Either way, the validation runs under 'timeout' inside the container,
+        # so a start.sh that blocks (e.g. 'ibek ioc do-wait' with an unreachable
+        # IP) fails fast instead of hanging the job. The timeout does not
+        # include the image pull, and when it fires the container's main
+        # process exits, so the container stops with it.
+        # The probe matches the '--test)' case arm that parses start.sh's
+        # arguments, not any other mention of --test.
+        $docker run --rm --entrypoint bash \
             $selinux_opt \
             -v "${service}/config:/epics/ioc/config${vol_z}" \
             "${image}" \
             -c "
-            if grep -q -- '--test' /epics/ioc/start.sh; then
-                /epics/ioc/start.sh --test
+            if grep -q -- '--test)' /epics/ioc/start.sh; then
+                timeout --kill-after=10s 60s /epics/ioc/start.sh --test
             else
                 echo 'start.sh has no --test support; falling back to ibek runtime generate2'
-                ibek runtime generate2 /epics/ioc/config
+                # avoid issues with auto-gen genicam pvi files on the fallback
+                # path (ioc-adaravis only) -- start.sh --test handles this itself
+                sed -i s/AutoADGenICam/ADGenICam/ /epics/ioc/config/ioc.yaml
+                timeout --kill-after=10s 60s ibek runtime generate2 /epics/ioc/config
             fi &&
             cat /epics/runtime/st.cmd
             "

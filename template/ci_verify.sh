@@ -144,7 +144,9 @@ do
 
     # Get the IOC container image from values.yaml if supplied. values.yaml may
     # list other images too (initContainers, extraContainers, sub-charts such
-    # as odin), so use ioc-instance.image when present, else the only image.
+    # as odin), so use the image of the only ioc-instance mapping (at the top
+    # level or nested under a sub-chart, e.g. odin-eiger.ioc-instance.image),
+    # else the only image in the file.
     image=$(python - "${service}/values.yaml" <<'EOF'
 import sys
 import yaml
@@ -160,17 +162,34 @@ def images(node):
         for item in node:
             yield from images(item)
 
+def ioc_images(node):
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if (
+                key == "ioc-instance"
+                and isinstance(value, dict)
+                and isinstance(value.get("image"), str)
+            ):
+                yield value["image"]
+            else:
+                yield from ioc_images(value)
+    elif isinstance(node, list):
+        for item in node:
+            yield from ioc_images(item)
+
 values = yaml.safe_load(open(sys.argv[1])) or {}
-ioc = values.get("ioc-instance")
+ioc = list(ioc_images(values))
 found = list(images(values))
-if isinstance(ioc, dict) and isinstance(ioc.get("image"), str):
-    print(ioc["image"])
+if len(ioc) == 1:
+    print(ioc[0])
 elif len(found) == 1:
     print(found[0])
 elif found:
     sys.exit(
-        f"{sys.argv[1]} lists several images {found}: set the IOC image in "
-        "ioc-instance.image or add the service to .ci_skip_checks"
+        f"{sys.argv[1]} lists several images {found} and no single "
+        "ioc-instance.image (top level or under a sub-chart) to pick the IOC "
+        "image from. Set the IOC image there, or list the service in "
+        ".ci_skip_checks (which skips ALL CI checks for it, including helm lint)"
     )
 EOF
 )

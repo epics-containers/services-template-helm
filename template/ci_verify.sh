@@ -97,9 +97,12 @@ fi
 if [[ -n "${CI:-}" ]]; then
     vol_z=":z"
     selinux_opt=""
-else
+elif [[ $docker != "kodman" ]]; then
     vol_z=""
     selinux_opt="--security-opt label=disable"
+else
+    vol_z=""
+    selinux_opt=""
 fi
 
 # Get changed services (excluding global values.yaml)

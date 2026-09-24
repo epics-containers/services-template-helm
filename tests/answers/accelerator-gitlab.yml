@@ -1,0 +1,10 @@
+# accelerator domain: no gateway and no Athena services
+domain: rf
+location: sr03c
+cluster_name: acastus
+cluster_namespace: accelerator
+git_platform: gitlab.diamond.ac.uk
+dls_technical_area: accelerator
+# gateway is skipped for non-beamline domains but its default still applies,
+# so set it explicitly to cover the no-gateway path
+gateway: false

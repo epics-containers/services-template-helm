@@ -155,7 +155,9 @@ dls_technical_area:
 
 gateway:
   help: Deploy an EPICS gateway to allow traffic from pods without hostNetwork. 
-  default: true
+  # the default must match 'when': a question copier does not ask still gets
+  # its default, so a bare 'true' here gives accelerator repos a gateway
+  default: "{{ location.startswith('bl') }}"
   type: bool
   when: >-
     {{ location.startswith('bl') }}

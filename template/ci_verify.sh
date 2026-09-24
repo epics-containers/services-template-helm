@@ -174,8 +174,11 @@ do
         continue
     fi
 
-    # Get the container image that this service uses from values.yaml if supplied
-    image=$(cat ${service}/values.yaml | sed -rn 's/^ +image: (.*)/\1/p')
+    # pick_ioc_image.py prints the IOC container image from values.yaml (an
+    # ioc-instance.image at any depth, else the only image in the file), or
+    # exits with an explanatory error if several images are found and none
+    # can be picked out that way.
+    image=$("${ROOT}/pick_ioc_image.py" "${service}/values.yaml")
 
     if [ -n "${image}" ]; then
         echo "Validating ${service} with ${image}"

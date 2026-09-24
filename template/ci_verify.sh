@@ -6,7 +6,7 @@
 #
 # At present this will only work with IOCs because it uses ibek. To support
 # other future services that don't use ibek, we will need to add a standard
-# entrypoint for validating the config folder mounted at /config.
+# entrypoint for validating the config folder mounted at /epics/ioc/config.
 
 ROOT=$(realpath $(dirname ${0}))
 set -xe
@@ -91,6 +91,20 @@ else
     if ! docker version &>/dev/null; then docker=podman; else docker=docker; fi
 fi
 
+# On CI runners the working tree is on local disk so :z SELinux relabelling
+# works fine. On developer workstations the tree may sit on NFS which does not
+# support xattr; disable SELinux labelling instead.
+if [[ -n "${CI:-}" ]]; then
+    vol_z=":z"
+    selinux_opt=""
+elif [[ $(basename "${docker}") != "kodman" ]]; then
+    vol_z=""
+    selinux_opt="--security-opt label=disable"
+else
+    vol_z=""
+    selinux_opt=""
+fi
+
 # Get changed services (excluding global values.yaml)
 CHANGED_SERVICES=$(git diff --name-only "$DIFF_BASE" HEAD \
   | grep '^services/' \
@@ -124,8 +138,9 @@ do
 
     echo "Validating helm chart for ${service_name}"
     $docker run --rm --entrypoint bash \
-        -v ${ROOT}/.ci_work:/services:z \
-        -v ${ROOT}/.helm-shared:/.helm-shared:z \
+        $selinux_opt \
+        -v "${ROOT}/.ci_work:/services${vol_z}" \
+        -v "${ROOT}/.helm-shared:/.helm-shared${vol_z}" \
         alpine/helm:3.14.3 \
         -c "
            helm dependency update /services/$service_name &&
@@ -151,19 +166,33 @@ do
         runtime=/tmp/ioc-runtime/$(basename ${service})
         mkdir -p ${runtime}
 
-        # avoid issues with auto-gen genicam pvi files (ioc-adaravis only)
-        sed -i s/AutoADGenICam/ADGenICam/ ${service}/config/ioc.yaml
-
-        # This will fail and exit if the ioc.yaml is invalid
-        # Also show the startup script we just generated (and verify it exists)
-        # 'ibek runtime generate2 /config' reads the whole mounted config folder
-        # (ioc.yaml + any vendored/local *.ibek.support.yaml, proto and db) and
-        # places the generated runtime (st.cmd, proto, db) under /epics/runtime.
+        # Prefer start.sh --test (generates all runtime assets - st.cmd, db,
+        # pvi - exactly as in production, but skips hardware connections and
+        # the IOC binary launch).
+        # For released images without this test feature, fall back to a plain
+        # 'ibek runtime generate2' which only renders the config and
+        # never touches start.sh or the IOC binary.
+        # Either way, the validation runs under 'timeout' inside the container,
+        # so a start.sh that blocks (e.g. 'ibek ioc do-wait' with an unreachable
+        # IP) fails fast instead of hanging the job. The timeout does not
+        # include the image pull, and when it fires the container's main
+        # process exits, so the container stops with it.
+        # The probe matches the '--test)' case arm that parses start.sh's
+        # arguments, not any other mention of --test.
         $docker run --rm --entrypoint bash \
-            -v ${service}/config:/config:z \
-            ${image} \
+            $selinux_opt \
+            -v "${service}/config:/epics/ioc/config${vol_z}" \
+            "${image}" \
             -c "
-            ibek runtime generate2 /config  &&
+            if grep -q -- '--test)' /epics/ioc/start.sh; then
+                timeout --kill-after=10s 60s /epics/ioc/start.sh --test
+            else
+                echo 'start.sh has no --test support; falling back to ibek runtime generate2'
+                # avoid issues with auto-gen genicam pvi files on the fallback
+                # path (ioc-adaravis only) -- start.sh --test handles this itself
+                sed -i s/AutoADGenICam/ADGenICam/ /epics/ioc/config/ioc.yaml
+                timeout --kill-after=10s 60s ibek runtime generate2 /epics/ioc/config
+            fi &&
             cat /epics/runtime/st.cmd
             "
 

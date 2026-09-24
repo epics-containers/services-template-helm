@@ -39,7 +39,7 @@ blueapi:
         instrument: {{ instrument }}
       sources:
       - kind: dodal
-        module: dodal.beamlines.{{ instrument }}
+        module: dodal.beamlines.{{ instrument | replace('-', '_') }}
       - kind: planFunctions
         module: dodal.plans
       events:

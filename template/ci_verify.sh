@@ -24,7 +24,16 @@ cd ${ROOT}
 #  'ibek pattern' vendoring, so no submodule init is required for runtime support)
 git submodule update --init
 
-pip install uv
+# install uv only if it is missing: a local pip may be unable to install it
+if ! command -v uv >/dev/null; then
+    pip install uv || {
+        echo "ERROR: uv not found and pip could not install it." >&2
+        echo "Install uv from https://docs.astral.sh/uv/ and re-run." >&2
+        exit 1
+    }
+fi
+# a pre-installed uv is reused as-is: >= 0.5.6 is needed (uvx --constraints)
+uv --version
 # use python 3.13 to ensure latest pydantic
 uv venv --python 3.13 --clear
 source .venv/bin/activate

@@ -142,57 +142,11 @@ do
         continue
     fi
 
-    # Get the IOC container image from values.yaml if supplied. values.yaml may
-    # list other images too (initContainers, extraContainers, sub-charts such
-    # as odin), so use the image of the only ioc-instance mapping (at the top
-    # level or nested under a sub-chart, e.g. odin-eiger.ioc-instance.image),
-    # else the only image in the file.
-    image=$(python - "${service}/values.yaml" <<'EOF'
-import sys
-import yaml
-
-def images(node):
-    if isinstance(node, dict):
-        for key, value in node.items():
-            if key == "image" and isinstance(value, str):
-                yield value
-            else:
-                yield from images(value)
-    elif isinstance(node, list):
-        for item in node:
-            yield from images(item)
-
-def ioc_images(node):
-    if isinstance(node, dict):
-        for key, value in node.items():
-            if (
-                key == "ioc-instance"
-                and isinstance(value, dict)
-                and isinstance(value.get("image"), str)
-            ):
-                yield value["image"]
-            else:
-                yield from ioc_images(value)
-    elif isinstance(node, list):
-        for item in node:
-            yield from ioc_images(item)
-
-values = yaml.safe_load(open(sys.argv[1])) or {}
-ioc = list(ioc_images(values))
-found = list(images(values))
-if len(ioc) == 1:
-    print(ioc[0])
-elif len(found) == 1:
-    print(found[0])
-elif found:
-    sys.exit(
-        f"{sys.argv[1]} lists several images {found} and no single "
-        "ioc-instance.image (top level or under a sub-chart) to pick the IOC "
-        "image from. Set the IOC image there, or list the service in "
-        ".ci_skip_checks (which skips ALL CI checks for it, including helm lint)"
-    )
-EOF
-)
+    # pick_ioc_image.py prints the IOC container image from values.yaml (an
+    # ioc-instance.image at any depth, else the only image in the file), or
+    # exits with an explanatory error if several images are found and none
+    # can be picked out that way.
+    image=$("${ROOT}/pick_ioc_image.py" "${service}/values.yaml")
 
     if [ -n "${image}" ]; then
         echo "Validating ${service} with ${image}"

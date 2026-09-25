@@ -105,6 +105,7 @@ shopt -u nullglob
 
 # Verify the IOC instance definitions
 ################################################################################
+STEP="choose and prepare the services to check"
 # if a docker provider is specified, use it
 if [[ $DOCKER_PROVIDER ]]; then
     docker=$DOCKER_PROVIDER
@@ -251,7 +252,8 @@ do
             cat /epics/runtime/st.cmd
             "
         RESULTS+=("PASS  IOC config ${service_name}")
-
+    else
+        RESULTS+=("SKIP  IOC config ${service_name} (no IOC image in values.yaml)")
     fi
 done
 

@@ -10,6 +10,29 @@
 
 ROOT=$(realpath $(dirname ${0}))
 set -xe
+
+# Print a summary of every check when the script exits. set -e stops at the
+# first failing command, so a failure is always the last step recorded in STEP.
+RESULTS=()
+STEP="setup"
+summary() {
+    local rc=$?
+    { set +x; } 2>/dev/null
+    echo
+    echo "==================== ci_verify summary ===================="
+    echo "  scope: ${SCOPE:-not reached}"
+    local r
+    for r in "${RESULTS[@]}"; do echo "  ${r}"; done
+    if [[ ${rc} -ne 0 ]]; then
+        echo "  FAIL  ${STEP} (exit ${rc})"
+        echo "Stopped at the first failure: later checks did not run."
+    else
+        echo "All checks passed."
+    fi
+    echo "==========================================================="
+}
+trap summary EXIT
+
 rm -rf ${ROOT}/.ci_work/
 mkdir -p ${ROOT}/.ci_work
 
@@ -43,7 +66,9 @@ uv pip install -r requirements.txt
 uvx pre-commit install
 uvx ibek --version
 uvx techui-builder --version
+STEP="pre-commit"
 uvx pre-commit run --all-files --show-diff-on-failure
+RESULTS+=("PASS  pre-commit")
 
 # Verify vendored runtime-support integrity for every instance
 ################################################################################
@@ -67,11 +92,14 @@ for lock in ${ROOT}/services/*/runtime-lock.yaml; do
     checks=${ROOT}/.ci_skip_checks
     if [[ -f "${checks}" ]] && grep -Fxq -- "${instance_name}" "${checks}"; then
         echo "Skipping pattern check for ${instance_name}"
+        RESULTS+=("SKIP  pattern check ${instance_name}")
         continue
     fi
 
     echo "Checking vendored runtime-support for ${instance_name}"
+    STEP="pattern check ${instance_name}"
     ibek pattern check "services/${instance_name}"
+    RESULTS+=("PASS  pattern check ${instance_name}")
 done
 shopt -u nullglob
 
@@ -122,9 +150,11 @@ if [[ -n "${REF}" ]] &&
     git fetch --quiet origin "${REF}" &&
     DIFF_BASE=$(git merge-base HEAD FETCH_HEAD); then
     echo "Checking services changed since ${REF} (${DIFF_BASE})"
+    SCOPE="services changed since ${REF} (${DIFF_BASE:0:8})"
     SERVICES=$(git diff --name-only "${DIFF_BASE}" HEAD -- services/ | cut -d/ -f2 | sort -u)
 else
     echo "Checking all services"
+    SCOPE="all services"
     SERVICES=$(ls "${ROOT}/services")
 fi
 
@@ -150,10 +180,12 @@ do
     checks=${ROOT}/.ci_skip_checks
     if [[ -f "${checks}" ]] && grep -Fxq -- "${service_name}" "${checks}"; then
         echo "Skipping ${service_name}"
+        RESULTS+=("SKIP  ${service_name}")
         continue
     fi
 
     echo "Validating helm chart for ${service_name}"
+    STEP="helm chart ${service_name}"
     $docker run --rm --entrypoint bash \
         $selinux_opt \
         -v "${ROOT}/.ci_work:/services${vol_z}" \
@@ -167,6 +199,7 @@ do
              --values /services/$service_name/values.yaml &&
            rm -rf /services/$service_name/charts
         "
+    RESULTS+=("PASS  helm chart ${service_name}")
 
     ### Validate each ioc config ###
     # Skip if subfolder has no config to validate
@@ -178,10 +211,12 @@ do
     # ioc-instance.image at any depth, else the only image in the file), or
     # exits with an explanatory error if several images are found and none
     # can be picked out that way.
+    STEP="pick IOC image ${service_name}"
     image=$("${ROOT}/pick_ioc_image.py" "${service}/values.yaml")
 
     if [ -n "${image}" ]; then
         echo "Validating ${service} with ${image}"
+        STEP="IOC config ${service_name} (${image})"
 
         runtime=/tmp/ioc-runtime/$(basename ${service})
         mkdir -p ${runtime}
@@ -215,6 +250,7 @@ do
             fi &&
             cat /epics/runtime/st.cmd
             "
+        RESULTS+=("PASS  IOC config ${service_name}")
 
     fi
 done

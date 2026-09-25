@@ -150,9 +150,21 @@ esac
 if [[ -n "${REF}" ]] &&
     git fetch --quiet origin "${REF}" &&
     DIFF_BASE=$(git merge-base HEAD FETCH_HEAD); then
-    echo "Checking services changed since ${REF} (${DIFF_BASE})"
-    SCOPE="services changed since ${REF} (${DIFF_BASE:0:8})"
-    SERVICES=$(git diff --name-only "${DIFF_BASE}" HEAD -- services/ | cut -d/ -f2 | sort -u)
+    CHANGED=$(git diff --name-only "${DIFF_BASE}" HEAD)
+    # .helm-shared/ (the ioc-instance/ioc-group charts and values.schema.json
+    # every service's chart depends on) and services/values.yaml (the values
+    # every service's helm template/lint is rendered with) are not any one
+    # service's own files. A change to either can affect every service, so
+    # treat it the same as a manual full run.
+    if echo "${CHANGED}" | grep -qE '^(\.helm-shared/|services/values\.yaml$)'; then
+        echo "Shared file changed since ${REF} (${DIFF_BASE}): checking all services"
+        SCOPE="all services (shared file changed since ${REF} (${DIFF_BASE:0:8}))"
+        SERVICES=$(ls "${ROOT}/services")
+    else
+        echo "Checking services changed since ${REF} (${DIFF_BASE})"
+        SCOPE="services changed since ${REF} (${DIFF_BASE:0:8})"
+        SERVICES=$(echo "${CHANGED}" | grep '^services/' | cut -d/ -f2 | sort -u)
+    fi
 else
     echo "Checking all services"
     SCOPE="all services"

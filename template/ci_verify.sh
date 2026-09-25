@@ -43,8 +43,8 @@ mkdir -p ${ROOT}/.ci_work
 
 cd ${ROOT}
 # techui-support is a submodule; initialise it for the synoptic checks.
-# (the old ibek-runtime-streamdevice submodule has been retired in favour of
-#  'ibek pattern' vendoring, so no submodule init is required for runtime support)
+# (runtime support is vendored per instance via 'ibek pattern', not a
+#  submodule, so no further submodule init is required for it)
 git submodule update --init
 
 # install uv only if it is missing: a local pip may be unable to install it

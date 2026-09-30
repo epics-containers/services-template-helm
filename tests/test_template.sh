@@ -11,7 +11,7 @@ answers=$(realpath "${1:?usage: $0 <answers file> [output dir]}")
 template=$(realpath "$(dirname "${0}")/..")
 out=${2:-$(mktemp -d)}
 
-uvx copier copy --trust --defaults --vcs-ref HEAD \
+uvx copier copy --defaults --vcs-ref HEAD \
     --data-file "${answers}" "${template}" "${out}"
 
 cd "${out}"

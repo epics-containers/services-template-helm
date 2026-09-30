@@ -107,7 +107,7 @@ else
         # template update changes what every service's checks mean (e.g. the
         # ibek pin in requirements.txt, or ci_verify.sh's own checks). A
         # change to any of these is treated the same as a manual full run.
-        SHARED_FILES='^(\.helm-shared/|services/values\.yaml$|ci_verify\.sh$|\.gitlab-ci\.yml$|\.pre-commit-config\.yaml$|requirements\.txt$|\.copier-answers\.yml$)'
+        SHARED_FILES='^(\.helm-shared/|services/values\.yaml$|ci_verify\.sh$|\.gitlab-ci\.yml$|\.github/workflows/|\.pre-commit-config\.yaml$|requirements\.txt$|\.copier-answers\.yml$)'
         if echo "${CHANGED}" | grep -qE "${SHARED_FILES}"; then
             echo "Shared file changed since ${REF} (${DIFF_BASE}): checking all services"
             SCOPE="all services (shared file changed since ${REF} (${DIFF_BASE:0:8}))"

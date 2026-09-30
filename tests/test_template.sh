@@ -23,3 +23,12 @@ git -c user.name=ci -c user.email=ci@example.com commit --quiet -m "rendered fro
 # PR variables make ci_verify.sh look for a base branch that does not exist
 unset GITHUB_BASE_REF CI_MERGE_REQUEST_TARGET_BRANCH_NAME
 bash ci_verify.sh
+
+# a service whose templates link points at an empty folder must fail the
+# shared chart links check, before any of the slower checks run
+rm .helm-shared/templates/*
+if bash ci_verify.sh > broken.log 2>&1; then
+    echo "ci_verify.sh passed with an empty .helm-shared/templates" >&2
+    exit 1
+fi
+grep -q "FAIL  shared chart links" broken.log

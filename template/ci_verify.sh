@@ -36,6 +36,30 @@ trap summary EXIT
 rm -rf ${ROOT}/.ci_work/
 mkdir -p ${ROOT}/.ci_work
 
+# Check every service's shared chart links resolve
+################################################################################
+# Most services link templates/ and Chart.yaml into .helm-shared/. A link to a
+# missing or empty folder renders a chart with no templates, or fails later
+# with a confusing error, so report every broken link up front. Git does not
+# keep empty folders, so a link that works in your checkout can still be broken
+# in CI's fresh clone.
+STEP="shared chart links"
+broken=()
+while IFS= read -r link; do
+    if [[ ! -e ${link} ]] || { [[ -d ${link} ]] && [[ -z $(ls -A "${link}/") ]]; }; then
+        broken+=("${link#${ROOT}/} -> $(readlink "${link}")")
+    fi
+done < <(find "${ROOT}/services" -mindepth 2 -maxdepth 2 -type l \( -name templates -o -name Chart.yaml \) | sort)
+if [[ ${#broken[@]} -gt 0 ]]; then
+    { set +x; } 2>/dev/null
+    echo "ERROR: these links point at a missing or empty target:" >&2
+    printf '  %s\n' "${broken[@]}" >&2
+    echo "If .helm-shared/ lost files in a template update, restore them from the" >&2
+    echo "commit before it: git checkout <commit> -- .helm-shared" >&2
+    exit 1
+fi
+RESULTS+=("PASS  shared chart links")
+
 # Perform pre-commit checks to ensure techui-builder has validated the synoptic
 # and that each instance's ioc.schema.json is up to date.
 ################################################################################

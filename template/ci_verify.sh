@@ -47,6 +47,74 @@ cd ${ROOT}
 #  submodule, so no further submodule init is required for it)
 git submodule update --init
 
+# Choose the services to check
+################################################################################
+# An explicit list of service names on the command line checks only those,
+# skipping the diff against the target branch entirely: used by
+# ci_verify_team.py and by anyone auditing a subset of services by hand.
+#
+# With no arguments: a manually-run pipeline always checks every service, so
+# it can be used to sweep the whole repo on demand. A push to the default
+# branch checks only what that push changed, so a green run means that push
+# is good, not that every service still is. A branch or merge request checks
+# what has changed since the default branch or the MR/PR target. Anything
+# else -- outside CI, or a base commit that cannot be fetched (a new branch,
+# a force push) -- checks every service, since there is nothing to safely
+# diff against.
+STEP="choose the services to check"
+if [[ $# -gt 0 ]]; then
+    for svc in "$@"; do
+        [[ -d "${ROOT}/services/${svc}" ]] || {
+            echo "ERROR: services/${svc} does not exist" >&2
+            exit 1
+        }
+    done
+    echo "Checking the services given on the command line: $*"
+    SCOPE="explicit selection: $*"
+    SERVICES="$*"
+else
+    target=${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-${GITHUB_BASE_REF:-${CI_DEFAULT_BRANCH:-}}}
+    branch=${CI_COMMIT_BRANCH:-${GITHUB_REF_NAME:-}}
+    default=${CI_DEFAULT_BRANCH:-}
+    case ${CI_PIPELINE_SOURCE:-}${GITHUB_EVENT_NAME:-}/$branch/$default/$target in
+        web*|*workflow_dispatch*)  REF= ;;                       # manual full run: no base to diff from
+        */"$default"/"$default"/*) REF=$CI_COMMIT_BEFORE_SHA ;;  # default branch push: diff from just before this push
+        */*/*/?*)                  REF=$target ;;                # branch or MR: diff from its target
+        *)                         REF= ;;                       # fallback: nothing to compare against
+    esac
+
+    if [[ -n "${REF}" ]] &&
+        git fetch --quiet origin "${REF}" &&
+        DIFF_BASE=$(git merge-base HEAD FETCH_HEAD); then
+        CHANGED=$(git diff --name-only "${DIFF_BASE}" HEAD)
+        # .helm-shared/ (the ioc-instance/ioc-group charts and values.schema.json
+        # every service's chart depends on) and services/values.yaml (the values
+        # every service's helm template/lint is rendered with) are not any one
+        # service's own files. A change to either can affect every service, so
+        # treat it the same as a manual full run.
+        if echo "${CHANGED}" | grep -qE '^(\.helm-shared/|services/values\.yaml$)'; then
+            echo "Shared file changed since ${REF} (${DIFF_BASE}): checking all services"
+            SCOPE="all services (shared file changed since ${REF} (${DIFF_BASE:0:8}))"
+            SERVICES=$(ls "${ROOT}/services")
+        else
+            echo "Checking services changed since ${REF} (${DIFF_BASE})"
+            SCOPE="services changed since ${REF} (${DIFF_BASE:0:8})"
+            SERVICES=$(echo "${CHANGED}" | grep '^services/' | cut -d/ -f2 | sort -u)
+        fi
+    else
+        echo "Checking all services"
+        SCOPE="all services"
+        SERVICES=$(ls "${ROOT}/services")
+    fi
+fi
+
+# true if $1 is one of the chosen SERVICES (space/newline separated)
+in_services() {
+    local s
+    for s in ${SERVICES}; do [[ "${s}" == "$1" ]] && return 0; done
+    return 1
+}
+
 # install uv only if it is missing: a local pip may be unable to install it
 if ! command -v uv >/dev/null; then
     pip install uv || {
@@ -88,6 +156,9 @@ for lock in ${ROOT}/services/*/runtime-lock.yaml; do
     instance_dir=$(dirname "${lock}")
     instance_name=$(basename "${instance_dir}")
 
+    # restrict to the chosen services (see "Choose the services to check" above)
+    in_services "${instance_name}" || continue
+
     # honour .ci_skip_checks
     checks=${ROOT}/.ci_skip_checks
     if [[ -f "${checks}" ]] && grep -Fxq -- "${instance_name}" "${checks}"; then
@@ -105,7 +176,7 @@ shopt -u nullglob
 
 # Verify the IOC instance definitions
 ################################################################################
-STEP="choose and prepare the services to check"
+STEP="prepare the services to check"
 # if a docker provider is specified, use it
 if [[ $DOCKER_PROVIDER ]]; then
     docker=$DOCKER_PROVIDER
@@ -126,49 +197,6 @@ elif [[ $(basename "${docker}") != "kodman" ]]; then
 else
     vol_z=""
     selinux_opt=""
-fi
-
-# Choose the services to check
-################################################################################
-# A manually-run pipeline always checks every service, so it can be used to
-# sweep the whole repo on demand. A push to the default branch checks only
-# what that push changed, so a green run means that push is good, not that
-# every service still is. A branch or merge request checks what has changed
-# since the default branch or the MR/PR target. Anything else -- outside CI,
-# or a base commit that cannot be fetched (a new branch, a force push) --
-# checks every service, since there is nothing to safely diff against.
-target=${CI_MERGE_REQUEST_TARGET_BRANCH_NAME:-${GITHUB_BASE_REF:-${CI_DEFAULT_BRANCH:-}}}
-branch=${CI_COMMIT_BRANCH:-${GITHUB_REF_NAME:-}}
-default=${CI_DEFAULT_BRANCH:-}
-case ${CI_PIPELINE_SOURCE:-}${GITHUB_EVENT_NAME:-}/$branch/$default/$target in
-    web*|*workflow_dispatch*)  REF= ;;                       # manual full run: no base to diff from
-    */"$default"/"$default"/*) REF=$CI_COMMIT_BEFORE_SHA ;;  # default branch push: diff from just before this push
-    */*/*/?*)                  REF=$target ;;                # branch or MR: diff from its target
-    *)                         REF= ;;                       # fallback: nothing to compare against
-esac
-
-if [[ -n "${REF}" ]] &&
-    git fetch --quiet origin "${REF}" &&
-    DIFF_BASE=$(git merge-base HEAD FETCH_HEAD); then
-    CHANGED=$(git diff --name-only "${DIFF_BASE}" HEAD)
-    # .helm-shared/ (the ioc-instance/ioc-group charts and values.schema.json
-    # every service's chart depends on) and services/values.yaml (the values
-    # every service's helm template/lint is rendered with) are not any one
-    # service's own files. A change to either can affect every service, so
-    # treat it the same as a manual full run.
-    if echo "${CHANGED}" | grep -qE '^(\.helm-shared/|services/values\.yaml$)'; then
-        echo "Shared file changed since ${REF} (${DIFF_BASE}): checking all services"
-        SCOPE="all services (shared file changed since ${REF} (${DIFF_BASE:0:8}))"
-        SERVICES=$(ls "${ROOT}/services")
-    else
-        echo "Checking services changed since ${REF} (${DIFF_BASE})"
-        SCOPE="services changed since ${REF} (${DIFF_BASE:0:8})"
-        SERVICES=$(echo "${CHANGED}" | grep '^services/' | cut -d/ -f2 | sort -u)
-    fi
-else
-    echo "Checking all services"
-    SCOPE="all services"
-    SERVICES=$(ls "${ROOT}/services")
 fi
 
 # Need to make sure values.yaml is included in the ci

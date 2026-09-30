@@ -1,0 +1,89 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["pathspec>=0.12"]
+# ///
+"""Run ci_verify.sh on the services a team owns, from its CODEOWNERS section.
+
+CODEOWNERS sections are the team -> paths map for this repo (see
+'.gitlab/CODEOWNERS'): '[Controls]', '[Data Acquisition]' and '[Tech UI]'.
+This reads the section for the given team, matches it against services/*,
+and runs ci_verify.sh with just that list, so a team's CI -- or a developer
+working locally -- checks only the services it owns.
+
+Self-contained via a uv shebang and PEP 723 inline dependencies: no venv or
+requirements.txt change needed to run it.
+"""
+
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+import pathspec
+
+ALIASES = {"controls": "controls", "daq": "data acquisition", "techui": "tech ui"}
+LOCATIONS = [".gitlab/CODEOWNERS", "CODEOWNERS", "docs/CODEOWNERS"]
+# [Name], ^[Name], [Name][2], each optionally followed by owners
+SECTION = re.compile(r"^\^?\[([^\]]+)\]")
+
+
+def sections(codeowners: Path) -> dict[str, list[str]]:
+    result: dict[str, list[str]] = {}
+    current = None
+    for line in codeowners.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if match := SECTION.match(line):
+            current = match.group(1).strip().lower()
+            result.setdefault(current, [])
+        elif current is not None:
+            result[current].append(line.split()[0])
+    return result
+
+
+def main() -> None:
+    args = sys.argv[1:]
+    dry_run = "--dry-run" in args
+    args = [a for a in args if a != "--dry-run"]
+    if len(args) != 1 or args[0] not in ALIASES:
+        sys.exit(f"usage: {sys.argv[0]} {'|'.join(ALIASES)} [--dry-run]")
+    root = Path(__file__).resolve().parent
+    codeowners = next((root / p for p in LOCATIONS if (root / p).exists()), None)
+    if codeowners is None:
+        sys.exit(
+            "no CODEOWNERS file found (looked in "
+            f"{', '.join(LOCATIONS)}). This is a GitLab-only check; on "
+            "GitHub run 'ci_verify.sh <services...>' directly."
+        )
+
+    all_sections = sections(codeowners)
+    team = ALIASES[args[0]]
+    if team not in all_sections:
+        sys.exit(f"no [{team}] section in {codeowners}")
+
+    services = sorted(
+        d.name
+        for d in (root / "services").iterdir()
+        if d.is_dir() and not d.name.startswith(".")
+    )
+
+    def owned(patterns: list[str]) -> set[str]:
+        spec = pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+        return {s for s in services if spec.match_file(f"services/{s}/")}
+
+    claimed = set().union(*(owned(p) for p in all_sections.values()))
+    for service in sorted(set(services) - claimed):
+        print(f"WARNING: services/{service} is not in any CODEOWNERS section")
+
+    mine = sorted(owned(all_sections[team]))
+    if not mine:
+        sys.exit(f"no service matches the [{team}] section")
+    print(f"[{team}]: {' '.join(mine)}")
+    if not dry_run:
+        sys.exit(subprocess.call([str(root / "ci_verify.sh"), *mine]))
+
+
+if __name__ == "__main__":
+    main()

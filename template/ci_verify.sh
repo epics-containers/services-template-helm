@@ -90,9 +90,14 @@ else
         # .helm-shared/ (the ioc-instance/ioc-group charts and values.schema.json
         # every service's chart depends on) and services/values.yaml (the values
         # every service's helm template/lint is rendered with) are not any one
-        # service's own files. A change to either can affect every service, so
-        # treat it the same as a manual full run.
-        if echo "${CHANGED}" | grep -qE '^(\.helm-shared/|services/values\.yaml$)'; then
+        # service's own files. Neither are the files the template itself owns
+        # -- update-services-template.md's "Resolve the Template's Own Files"
+        # lists these; keep this pattern in step with that list -- since a
+        # template update changes what every service's checks mean (e.g. the
+        # ibek pin in requirements.txt, or ci_verify.sh's own checks). A
+        # change to any of these is treated the same as a manual full run.
+        SHARED_FILES='^(\.helm-shared/|services/values\.yaml$|ci_verify\.sh$|\.gitlab-ci\.yml$|\.pre-commit-config\.yaml$|requirements\.txt$|\.copier-answers\.yml$)'
+        if echo "${CHANGED}" | grep -qE "${SHARED_FILES}"; then
             echo "Shared file changed since ${REF} (${DIFF_BASE}): checking all services"
             SCOPE="all services (shared file changed since ${REF} (${DIFF_BASE:0:8}))"
             SERVICES=$(ls "${ROOT}/services")
@@ -138,13 +143,18 @@ STEP="pre-commit"
 # CI_VERIFY_TEAM_FILES (set by ci_verify_team.py, a newline-separated list of
 # every tracked file the calling team's CODEOWNERS section matches) scopes
 # pre-commit to just those files, so an unresolved problem in a file another
-# team owns does not fail this run. Unset -- a plain ci_verify.sh call, with
-# or without an explicit service list -- runs pre-commit over the whole
-# repository, same as always.
-if [[ -n "${CI_VERIFY_TEAM_FILES:-}" ]]; then
-    readarray -t team_files <<<"${CI_VERIFY_TEAM_FILES}"
-    uvx pre-commit run --show-diff-on-failure --files "${team_files[@]}"
-    RESULTS+=("PASS  pre-commit (team-scoped)")
+# team owns does not fail this run. Set but empty means the team owns no
+# files, so there is nothing to check. Unset -- a plain ci_verify.sh call,
+# with or without an explicit service list -- runs pre-commit over the whole
+# repository.
+if [[ -n "${CI_VERIFY_TEAM_FILES+set}" ]]; then
+    if [[ -z "${CI_VERIFY_TEAM_FILES}" ]]; then
+        RESULTS+=("PASS  pre-commit (team-scoped: no files)")
+    else
+        readarray -t team_files <<<"${CI_VERIFY_TEAM_FILES}"
+        uvx pre-commit run --show-diff-on-failure --files "${team_files[@]}"
+        RESULTS+=("PASS  pre-commit (team-scoped)")
+    fi
 else
     uvx pre-commit run --all-files --show-diff-on-failure
     RESULTS+=("PASS  pre-commit")

@@ -92,13 +92,17 @@ done <<<"${CHANGED}"
 
 # sorted, one team name per line: a plain $(...) here would word-split a
 # team name that contains a space (e.g. 'Data Acquisition')
-while IFS= read -r team; do
-    echo "[${team}]"
-    printf '%s' "${BY_TEAM[${team}]}" | sort
-    echo
-done < <(printf '%s\n' "${!BY_TEAM[@]}" | sort)
+if [[ ${#BY_TEAM[@]} -eq 0 ]]; then
+    echo "No team-owned files changed"
+else
+    while IFS= read -r team; do
+        echo "[${team}]"
+        printf '%s' "${BY_TEAM[${team}]}" | sort
+        echo
+    done < <(printf '%s\n' "${!BY_TEAM[@]}" | sort)
+fi
 
 if [[ ${#UNCLAIMED[@]} -gt 0 ]]; then
-    echo "Not in any CODEOWNERS section:"
+    echo "Not in any CODEOWNERS section (expected layout: '[Controls]', '[Data Acquisition]' and '[Tech UI]' sections, as the template's CODEOWNERS.jinja generates):"
     printf '  %s\n' "${UNCLAIMED[@]}"
 fi

@@ -1,11 +1,14 @@
 # Generated once by services-template-helm (copier _skip_if_exists): this
 # repo owns it after that -- 'copier update' never rewrites it again.
 #
-# GitLab evaluates each section independently and has no path negation, so a
-# path matched by more than one section (for example the synoptic chart,
-# claimed by both the [Controls] IOC glob and [Tech UI]) is fine -- it just
-# needs review from every team that claims it. A path outside every section
-# needs no code-owner approval: there is no '*' default-owner line.
+# GitLab evaluates each section independently, so a path matched by more
+# than one section (for example the synoptic chart, claimed by both the
+# [Controls] IOC glob and [Tech UI]) is fine -- it just needs review from
+# every team that claims it. A path outside every section needs no
+# code-owner approval: there is no '*' default-owner line. GitLab 17.11+
+# supports a leading '!' to exclude a path from a section; this file does
+# not use it, and update_checklist.sh (unlike ci_verify_team.py) does not
+# understand it -- see that script's header.
 #
 # Add each team's reviewers after the section name or after a path, e.g.
 # '[Controls] @my-group/controls'. A service that follows no naming

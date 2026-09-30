@@ -135,8 +135,20 @@ uvx pre-commit install
 uvx ibek --version
 uvx techui-builder --version
 STEP="pre-commit"
-uvx pre-commit run --all-files --show-diff-on-failure
-RESULTS+=("PASS  pre-commit")
+# CI_VERIFY_TEAM_FILES (set by ci_verify_team.py, a newline-separated list of
+# every tracked file the calling team's CODEOWNERS section matches) scopes
+# pre-commit to just those files, so an unresolved problem in a file another
+# team owns does not fail this run. Unset -- a plain ci_verify.sh call, with
+# or without an explicit service list -- runs pre-commit over the whole
+# repository, same as always.
+if [[ -n "${CI_VERIFY_TEAM_FILES:-}" ]]; then
+    readarray -t team_files <<<"${CI_VERIFY_TEAM_FILES}"
+    uvx pre-commit run --show-diff-on-failure --files "${team_files[@]}"
+    RESULTS+=("PASS  pre-commit (team-scoped)")
+else
+    uvx pre-commit run --all-files --show-diff-on-failure
+    RESULTS+=("PASS  pre-commit")
+fi
 
 # Verify vendored runtime-support integrity for every instance
 ################################################################################

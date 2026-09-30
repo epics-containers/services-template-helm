@@ -25,15 +25,9 @@ base=${1:?"usage: $0 <base>"}
 
 cd "${ROOT}"
 
-CODEOWNERS=""
-for p in .gitlab/CODEOWNERS CODEOWNERS docs/CODEOWNERS; do
-    if [[ -f "${p}" ]]; then
-        CODEOWNERS="${p}"
-        break
-    fi
-done
-if [[ -z "${CODEOWNERS}" ]]; then
-    echo "ERROR: no CODEOWNERS file found (looked in .gitlab/CODEOWNERS, CODEOWNERS, docs/CODEOWNERS)" >&2
+CODEOWNERS=CODEOWNERS
+if [[ ! -f "${CODEOWNERS}" ]]; then
+    echo "ERROR: no CODEOWNERS file in ${ROOT}" >&2
     exit 1
 fi
 
@@ -43,11 +37,15 @@ if [[ -z "${CHANGED}" ]]; then
     exit 0
 fi
 
-# Print the team that owns $1 (an empty line if none of CODEOWNERS' sections
-# claim it), by walking the file top to bottom the way GitLab does: whichever
-# section's pattern matches last wins.
+# Print every team that owns $1, one per line (nothing if none of CODEOWNERS'
+# sections claim it). GitLab evaluates each section independently -- a file
+# claimed by more than one section (see CODEOWNERS.jinja's header comment)
+# is reported under every one of them. Within a single section, later
+# patterns don't need to override earlier ones since GitLab CODEOWNERS has
+# no negation: any matching pattern in a section is enough to claim the
+# file for that section.
 team_for() {
-    local file="/$1" team="" line section pattern matched=""
+    local file="/$1" line section pattern matched=""
     while IFS= read -r line; do
         line="${line%%#*}"
         line="${line#"${line%%[![:space:]]*}"}"  # trim leading whitespace
@@ -63,17 +61,21 @@ team_for() {
         # unquoted: a '*' in pattern (e.g. '/services/bl13j-*') must still
         # glob-match here, not be taken as a literal asterisk
         case "${file}" in
-            ${pattern} | ${pattern}/*) matched="${section}" ;;
+            ${pattern} | ${pattern}/*)
+                # record each distinct section once, in the order first matched
+                [[ $'\n'"${matched}" == *$'\n'"${section}"$'\n'* ]] ||
+                    matched+="${section}"$'\n'
+                ;;
         esac
     done <"${CODEOWNERS}"
-    echo "${matched}"
+    printf '%s' "${matched}"
 }
 
 declare -A BY_TEAM
 UNCLAIMED=()
 while IFS= read -r file; do
-    team=$(team_for "${file}")
-    if [[ -z "${team}" ]]; then
+    teams=$(team_for "${file}")
+    if [[ -z "${teams}" ]]; then
         UNCLAIMED+=("${file}")
         continue
     fi
@@ -82,7 +84,10 @@ while IFS= read -r file; do
     else
         status="merged"
     fi
-    BY_TEAM["${team}"]+="  ${status}  ${file}"$'\n'
+    # a file can be claimed by more than one section -- record it under each
+    while IFS= read -r team; do
+        BY_TEAM["${team}"]+="  ${status}  ${file}"$'\n'
+    done <<<"${teams}"
 done <<<"${CHANGED}"
 
 # sorted, one team name per line: a plain $(...) here would word-split a

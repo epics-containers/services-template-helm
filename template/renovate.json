@@ -30,16 +30,20 @@
     },
     {
       "description": [
-        "Generic IOC images are tagged either by date (e.g. 2026.9.1) or,",
-        "when built around one main support module, with that module's",
-        "version plus a build number (e.g. R2-3ec2), optionally with a",
-        "'-beta.N' / '-alpha.N' / '-rc.N' prerelease suffix (see 'Update",
-        "Generic IOC Image Versions'). A generic IOC's tag history can carry",
-        "older, differently-shaped tags (a 'v' prefix, a dot instead of a",
-        "hyphen before 'beta'); restrict proposals to the two current shapes",
-        "so Renovate never offers one of those instead.",
-        "NOT independently verified against a live generic-IOC repo's full",
-        "tag list -- check this regex against one before relying on it."
+        "Generic IOC images are tagged in two forms (see 'Update Generic IOC",
+        "Image Versions'). Module tags carry the main support module's",
+        "version and an epics-containers build number: R2-3ec2, v2.3ec1,",
+        "v2-7-9-ec2, 2-7-9ec3, 4.45ec7. Date tags carry the release date:",
+        "2026.9.1. Either form may end in a prerelease: -beta.N, -alpha.N,",
+        "-rc.N, -dev.N, .beta.N, or bN directly after a date (2025.8.1b1).",
+        "This regex orders module tags by version then build number, whatever",
+        "their 'R'/'v' prefix or '-'/'.' separators, and orders date tags by",
+        "date. The literal 'ec' is the compatibility group, so a module tag",
+        "is only ever replaced by a module tag and a date tag only by a date",
+        "tag. Prereleases are only proposed to an IOC already on a",
+        "prerelease (Renovate's ignoreUnstable). Tags matching neither form",
+        "(e.g. branch-build test tags) are never proposed.",
+        "One merge request per image, with the newest matching tag."
       ],
       "matchDatasources": [
         "docker"
@@ -47,7 +51,8 @@
       "matchPackageNames": [
         "ghcr.io/epics-containers/**"
       ],
-      "allowedVersions": "/^(\\d{4}\\.\\d{1,2}\\.\\d{1,2}|[A-Za-z][A-Za-z0-9]*-?\\d+ec\\d+)(-(alpha|beta|rc)\\.\\d+)?$/"
+      "versioning": "regex:^[Rv]?(?<major>\\d+)(?:[.-](?<minor>\\d+))?(?:[.-](?<patch>\\d+))?(?:-?(?<compatibility>ec)(?<build>\\d+))?(?:[.-]?(?<prerelease>(?:alpha|beta|rc|dev|a|b)\\.?\\d+))?$",
+      "separateMajorMinor": false
     }
   ],
   "customManagers": [

@@ -14,13 +14,15 @@
 # needs no code-owner approval: there is no '*' default-owner line. Owners
 # must be GitHub users or org teams with write access to this repository.
 #
-# Add each team's reviewers after its comment heading or after a path,
-# e.g. '# [Controls] @my-org/controls'. A service that follows no naming
+# Add each team's reviewers on its path lines, e.g.
+# '/services/{{ location }}-*/ @my-org/controls' -- not after the comment
+# heading, which GitHub ignores. A service that follows no naming
 # convention (e.g. a hand-added one-off) must be added under its team's
-# comment by hand: ci_verify_team.py <team> warns about any service
-# claimed by no section. ci_verify_team.py and update_checklist.sh read
-# these comment headings to work out which services a team owns,
-# independently of whether owners are set on them.
+# comment heading by hand, with owners on that new path line:
+# ci_verify_team.py <team> warns about any service claimed by no section.
+# ci_verify_team.py and update_checklist.sh read these comment headings to
+# work out which services a team owns, independently of whether owners are
+# set on them.
 {% else -%}
 # GitLab evaluates each section independently, so a path matched by more
 # than one section (for example the synoptic chart, claimed by both the

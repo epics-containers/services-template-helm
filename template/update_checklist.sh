@@ -43,17 +43,20 @@ fi
 # is reported under every one of them. Within a single section, later
 # patterns don't need to override earlier ones since GitLab CODEOWNERS has
 # no negation: any matching pattern in a section is enough to claim the
-# file for that section.
+# file for that section. On GitHub, section headers are themselves comments
+# ('# [Controls]'), so the header check below runs before comment-stripping.
 team_for() {
     local file="/$1" line section pattern matched=""
     while IFS= read -r line; do
-        line="${line%%#*}"
         line="${line#"${line%%[![:space:]]*}"}"  # trim leading whitespace
         [[ -z "${line}" ]] && continue
-        if [[ ${line} =~ ^\^?\[([^]]+)\] ]]; then
-            section="${BASH_REMATCH[1]}"
+        if [[ ${line} =~ ^(#\ ?)?\^?\[([^]]+)\] ]]; then
+            section="${BASH_REMATCH[2]}"
             continue
         fi
+        line="${line%%#*}"
+        line="${line#"${line%%[![:space:]]*}"}"  # trim again after comment-strip
+        [[ -z "${line}" ]] && continue
         [[ -z "${section:-}" ]] && continue
         pattern=$(awk '{print $1}' <<<"${line}")
         [[ ${pattern:0:1} == "/" ]] || continue  # see header comment

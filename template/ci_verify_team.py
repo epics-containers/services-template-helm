@@ -6,7 +6,9 @@
 """Run ci_verify.sh on the services a team owns, from its CODEOWNERS section.
 
 CODEOWNERS sections are the team -> paths map for this repo (see
-'CODEOWNERS' in the repo root): '[Controls]', '[Data Acquisition]' and '[Tech UI]'.
+'CODEOWNERS' in the repo root): '[Controls]', '[Data Acquisition]' and
+'[Tech UI]' -- '# [Controls]' etc. on GitHub, where section headers are
+comments rather than CODEOWNERS syntax.
 This reads the section for the given team, matches it against services/*,
 and runs ci_verify.sh with just that list, so a team's CI -- or a developer
 working locally -- checks only the services it owns. ci_verify.sh's
@@ -31,8 +33,9 @@ from pathlib import Path
 import pathspec
 
 ALIASES = {"controls": "controls", "daq": "data acquisition", "techui": "tech ui"}
-# [Name], ^[Name], [Name][2], each optionally followed by owners
-SECTION = re.compile(r"^\^?\[([^\]]+)\]")
+# [Name], ^[Name], [Name][2], each optionally followed by owners; '# ' may
+# lead on GitHub, where section headers are comments (GitHub has no sections)
+SECTION = re.compile(r"^(?:#\s*)?\^?\[([^\]]+)\]")
 
 
 def sections(codeowners: Path) -> dict[str, list[str]]:
@@ -40,11 +43,13 @@ def sections(codeowners: Path) -> dict[str, list[str]]:
     current = None
     for line in codeowners.read_text().splitlines():
         line = line.strip()
-        if not line or line.startswith("#"):
+        if not line:
             continue
         if match := SECTION.match(line):
             current = match.group(1).strip().lower()
             result.setdefault(current, [])
+        elif line.startswith("#"):
+            continue
         elif current is not None:
             result[current].append(line.split()[0])
     return result
@@ -59,10 +64,7 @@ def main() -> None:
     root = Path(__file__).resolve().parent
     codeowners = root / "CODEOWNERS"
     if not codeowners.exists():
-        sys.exit(
-            f"no {codeowners} file. This is a GitLab-only check; on "
-            "GitHub run 'ci_verify.sh <services...>' directly."
-        )
+        sys.exit(f"no {codeowners} file")
 
     all_sections = sections(codeowners)
     team = ALIASES[args[0]]

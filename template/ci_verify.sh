@@ -51,10 +51,10 @@ git submodule update --init
 ################################################################################
 # An explicit list of service names on the command line checks only those,
 # skipping the diff against the target branch entirely: used by anyone
-# auditing a subset of services by hand, and on GitLab by ci_verify_team.py
-# for CODEOWNERS-based per-team verification. GitHub support for the same
-# per-team scoping is planned; until then a GitHub repo always runs the
-# diff/fallback logic below.
+# auditing a subset of services by hand, and by ci_verify_team.py for
+# CODEOWNERS-based per-team verification, on either platform. A CI pipeline
+# always calls this script with no arguments, so this only ever happens on
+# a manual, local run.
 #
 # With no arguments: a manually-run pipeline always checks every service, so
 # it can be used to sweep the whole repo on demand. On GitLab, a push to the
@@ -180,8 +180,7 @@ uvx pre-commit install
 uvx ibek --version
 uvx techui-builder --version
 STEP="pre-commit"
-# CI_VERIFY_TEAM_FILES (set by ci_verify_team.py, GitLab-only -- GitHub
-# support for the same per-team scoping is planned -- a newline-separated
+# CI_VERIFY_TEAM_FILES (set by ci_verify_team.py -- a newline-separated
 # list of every tracked file the calling team's CODEOWNERS section matches)
 # scopes pre-commit to just those files, so an unresolved problem in a file
 # another team owns does not fail this run. Set but empty means the team owns

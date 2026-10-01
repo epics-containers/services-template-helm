@@ -10,9 +10,7 @@ _subdirectory: "template"
 _preserve_symlinks: true
 
 # Generated once, then owned by the repo: 'copier update' never overwrites a
-# path here that already exists on disk. CODEOWNERS lives in the repo root and
-# is only ever generated on GitLab (see the conditional file name it renders
-# from), so on a GitHub-hosted repo this pattern never matches.
+# path here that already exists on disk. CODEOWNERS lives in the repo root.
 _skip_if_exists:
   - "CODEOWNERS"
 

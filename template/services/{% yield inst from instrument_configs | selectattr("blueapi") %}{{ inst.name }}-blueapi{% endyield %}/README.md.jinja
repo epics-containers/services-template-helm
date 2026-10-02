@@ -1,4 +1,4 @@
-To request an Ingress for `{{ instrument }}-blueapi.diamond.ac.uk` in the `{{ cluster_namespace }}` namespace:
+To request an Ingress for `{{ inst.name }}-blueapi.diamond.ac.uk` in the `{{ cluster_namespace }}` namespace:
 
 1. Go to the Scientific Computing Help Desk at [schelpdesk.diamond.ac.uk](https://schelpdesk.diamond.ac.uk) and navigate to [Cloud → New Beamline Ingress](https://jira.diamond.ac.uk/servicedesk/customer/portal/2/create/156) for beamline clusters, or [Cloud → New Ingress](https://jira.diamond.ac.uk/servicedesk/customer/portal/2/create/91) for Argus / Pollux.
 2. Provide the following details:
@@ -8,7 +8,7 @@ To request an Ingress for `{{ instrument }}-blueapi.diamond.ac.uk` in the `{{ cl
     - **Namespace Name:**  
       `{{ cluster_namespace }}`
     - **Ingress Name:**  
-      `{{ instrument }}-blueapi.diamond.ac.uk`
+      `{{ inst.name }}-blueapi.diamond.ac.uk`
 
 3. Configure numtracker using the numtracker CLI client:
   Load the numtracker module on any DLS Red Hat workstation:
@@ -21,7 +21,7 @@ To request an Ingress for `{{ instrument }}-blueapi.diamond.ac.uk` in the `{{ cl
 
   Example configuration, please adapt this to beamlines requirements. The values in curly braces are intentional placeholders that will be populated by numtracker. They do not need to be manually replaced.
   ```
-  numtracker client configure {{instrument}} \
+  numtracker client configure {{ inst.name }} \
   --directory '/dls/{instrument}/data/{year}/{visit}' \
   --scan '{subdirectory}/{instrument}-{scan_number}' \
   --detector '{subdirectory}/{scan_number}/{instrument}-{scan_number}-{detector}'
@@ -32,9 +32,9 @@ To request an Ingress for `{{ instrument }}-blueapi.diamond.ac.uk` in the `{{ cl
 4. If blueapi auth is enabled, add the client secret and cookie secret to `templates/secret.yaml`:
 
   - To obtain the client secret, Create a ticket in [Keycloak Client registration](https://jira.diamond.ac.uk/servicedesk/customer/portal/5/create/176) with  
-    - Hostname: `https://{{ instrument }}-blueapi.diamond.ac.uk`
+    - Hostname: `https://{{ inst.name }}-blueapi.diamond.ac.uk`
     - Keycloak Environment: Dev/Test and Production
-    - ClientId: `{{ instrument }}Blueapi`
+    - ClientId: `{{ inst.name }}Blueapi`
     - GPG Public Key: Please follow docs [here](https://dev-guide.diamond.ac.uk/authn/how-tos/request-a-registration-with-keycloak/)
 
     You may receive separate credentials for the identity, identity-dev, and identity-test Diamond Keycloak services. By default use the identity credentials.
@@ -48,7 +48,7 @@ To request an Ingress for `{{ instrument }}-blueapi.diamond.ac.uk` in the `{{ cl
   ```
   Then, having obtaining both secrets, seal them with the following commands:
   ```
-  echo -n <secret> | kubeseal --raw --namespace {{ cluster_namespace }} --name blueapi-secret
+  echo -n <secret> | kubeseal --raw --namespace {{ cluster_namespace }} --name {{ inst.secret_prefix }}blueapi-secret
   ```
 
   And place each in the appropriate field in `templates/secret.yaml`
@@ -56,12 +56,12 @@ To request an Ingress for `{{ instrument }}-blueapi.diamond.ac.uk` in the `{{ cl
 5. If tiled insertion is enabled, request a service account through [Keycloak Client registration](https://jira.diamond.ac.uk/servicedesk/customer/portal/5/create/176) with the following hardcoded claims:
   - Applicaiton Hostname: tiled.diamond.ac.uk
   - Keycloak Environment: Dev/Test and Production
-  - Client ID: {{ instrument }}TiledWriter
+  - Client ID: {{ inst.name }}TiledWriter
   - Claim Name: `beamline`
-  - Claim Value: `{{ instrument }}`
+  - Claim Value: `{{ inst.name }}`
   - Claim JSON Type: `String`
   - Audience: `tiled-writer`
 
   You may receive separate credentials for the identity, identity-dev, and identity-test Diamond Keycloak services. By default use the identity credentials.
   
-  The client secret for the {{ instrument }}TiledWriter should be added to `templates/secret.yaml` -> `tiled-writer-secret`.
+  The client secret for the {{ inst.name }}TiledWriter should be added to `templates/secret.yaml` -> `tiled-writer-secret`.

@@ -16,6 +16,7 @@ jobs:
         answers:
           - beamline-github
           - beamline-gitlab
+          - beamline-endstations
           - accelerator-gitlab
 
     steps:

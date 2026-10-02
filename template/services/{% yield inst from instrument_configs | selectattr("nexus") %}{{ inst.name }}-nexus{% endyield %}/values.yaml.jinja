@@ -2,13 +2,13 @@ nexus-file-converter:
   debug:
     enabled: false
     suspend: false
-  beamline: {{ instrument }}
+  beamline: {{ inst.name }}
   template:
     entry/:
       NX_class@: NXentry
       instrument/:
         NX_class@: NXinstrument
-        name: {{ instrument }}
+        name: {{ inst.name }}
 
   volumes:
   - name: nexus-data
@@ -28,12 +28,12 @@ nexus-file-converter:
       profiles:
         active: rabbitmq
       rabbitmq:
-        host: {{ instrument }}-rabbitmq-daq.diamond.ac.uk
+        host: {{ inst.name }}-rabbitmq-daq.diamond.ac.uk
         username: guest
         password: guest
     files:
       output:
-        {% if numtracker_enabled %}
+        {% if inst.numtracker_enabled %}
         directory:
           staticDirectory: ""  # explicitly empty, get from StartDocument metadata
         {% else %}

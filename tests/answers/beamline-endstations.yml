@@ -1,0 +1,16 @@
+# beamline with two endstations sharing one repo, cluster and namespace: the
+# second overrides the default Athena services and auth settings
+domain: i15
+location: bl15i
+cluster_name: k8s-i15
+cluster_namespace: i15-beamline
+git_platform: github.com
+athena_services: [rabbitmq, blueapi, nexus]
+auth_enabled: true
+numtracker_enabled: true
+tiled_enabled: true
+instruments:
+  - i15
+  - name: i15-1
+    athena_services: [rabbitmq, blueapi]
+    tiled_enabled: false

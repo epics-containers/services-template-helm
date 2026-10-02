@@ -10,7 +10,7 @@ rabbitmq:
       value: guest
     password:
       value: guest
-    existingSecret: rabbitmq-secrets
+    existingSecret: {{ inst.secret_prefix }}rabbitmq-secrets
     erlangCookie:
       secretKey: rabbitmq-erlang-cookie
   plugins:

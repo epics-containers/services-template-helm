@@ -1,6 +1,6 @@
 apiVersion: v2
-name: {{ instrument }}-blueapi
-description: blueapi deployed for {{ instrument }}
+name: {{ inst.name }}-blueapi
+description: blueapi deployed for {{ inst.name }}
 version: 1.0.0
 # When we deploy with the edge-containers-cli we override this on the command line.
 # Direct deployment with Helm will use the default beta value.
@@ -12,7 +12,7 @@ dependencies:
   - name: blueapi
     version: "1.14.0"
     repository: "oci://ghcr.io/diamondlightsource/charts"
-{% if auth_enabled %}
+{% if inst.auth_enabled %}
   - name: oauth2-proxy
     alias: oauth2
     repository: https://oauth2-proxy.github.io/manifests

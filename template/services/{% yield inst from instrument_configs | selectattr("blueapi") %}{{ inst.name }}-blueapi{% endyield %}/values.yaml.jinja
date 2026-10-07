@@ -6,18 +6,18 @@ blueapi:
     runAsUser: # Find the required id with `id k8s-{{ domain }}-beamline`
   {% endif %}
   ingress:
-    enabled: {% if auth_enabled %}false{% else %}true{% endif %}
+    enabled: {% if inst.auth_enabled %}false{% else %}true{% endif %}
     hosts:
-      - host: {{ instrument }}-blueapi.diamond.ac.uk
+      - host: {{ inst.name }}-blueapi.diamond.ac.uk
         paths:
           - path: /
             pathType: Prefix
   
   extraEnvVars:
     - name: BEAMLINE
-      value: {{ instrument }}
+      value: {{ inst.name }}
     - name: INSTRUMENT
-      value: {{ instrument }}{% if gateway %}
+      value: {{ inst.name }}{% if gateway %}
     - name: EPICS_PVA_NAME_SERVERS
       value: {{ domain }}-epics-gateways:9075
     - name: EPICS_CA_NAME_SERVERS
@@ -26,20 +26,20 @@ blueapi:
       value: "NO"
     - name: EPICS_CA_AUTO_ADDR_LIST
       value: "NO"{% endif %}
-    {% if tiled_enabled %}
+    {% if inst.tiled_enabled %}
     - name: TILED_WRITER_SECRET
       valueFrom:
         secretKeyRef:
-          name: blueapi-secret
+          name: {{ inst.secret_prefix }}blueapi-secret
           key: tiled-writer-secret
     {% endif %}
   worker:
     env:
       metadata:
-        instrument: {{ instrument }}
+        instrument: {{ inst.name }}
       sources:
       - kind: dodal
-        module: dodal.beamlines.{{ instrument | replace('-', '_') }}
+        module: dodal.beamlines.{{ inst.name | replace('-', '_') }}
       - kind: planFunctions
         module: dodal.plans
       events:
@@ -48,29 +48,29 @@ blueapi:
       auth:
         username: guest
         password: guest
-      url: tcp://{{ instrument }}-rabbitmq-daq.diamond.ac.uk:61613
+      url: tcp://{{ inst.name }}-rabbitmq-daq.diamond.ac.uk:61613
       enabled: true
     logging:
       level: "INFO"
       graylog:
         enabled: true
-    {% if auth_enabled %}
+    {% if inst.auth_enabled %}
     oidc:
       well_known_url: "https://identity.diamond.ac.uk/realms/dls/.well-known/openid-configuration"
       client_id: "blueapiCli"
       client_audience: "account"
       logout_redirect_endpoint: "oauth2/sign_out"
     {% endif %}
-    {% if numtracker_enabled %}
+    {% if inst.numtracker_enabled %}
     numtracker:
       url: https://numtracker-staging.diamond.ac.uk/graphql
     {% endif %}
-    {% if tiled_enabled %}
+    {% if inst.tiled_enabled %}
     tiled:
       enabled: true
       url: "https://tiled.diamond.ac.uk/api/v1/"
       authentication:
-        client_id: "{{instrument}}TiledWriter"
+        client_id: "{{ inst.name }}TiledWriter"
         client_secret: ${TILED_WRITER_SECRET}
     {% endif %}
     scratch:
@@ -83,19 +83,19 @@ blueapi:
     persistentVolume:
       enabled: true
 
-{% if auth_enabled %}
+{% if inst.auth_enabled %}
 oauth2:
   proxyVarsAsSecrets: false
   extraEnv:
     - name: OAUTH2_PROXY_CLIENT_SECRET
       valueFrom:
         secretKeyRef:
-          name: blueapi-secret
+          name: {{ inst.secret_prefix }}blueapi-secret
           key: client-secret
     - name: OAUTH2_PROXY_COOKIE_SECRET
       valueFrom:
         secretKeyRef:
-          name: blueapi-secret
+          name: {{ inst.secret_prefix }}blueapi-secret
           key: cookie-secret
   config:
     configFile: |-
@@ -112,7 +112,7 @@ oauth2:
   ingress:
     enabled: true
     hosts:
-      - {{ instrument }}-blueapi.diamond.ac.uk
+      - {{ inst.name }}-blueapi.diamond.ac.uk
     annotations:
       nginx.ingress.kubernetes.io/proxy-buffer-size: "8k"
     path: /
@@ -125,11 +125,11 @@ oauth2:
         upstreams:
           - id: blueapi
             path: /
-            uri: http://{{ instrument }}-blueapi
+            uri: http://{{ inst.name }}-blueapi
       providers:
         - provider: oidc
           id: identity.diamond.ac.uk
-          clientID: {{instrument}}Blueapi
+          clientID: {{ inst.name }}Blueapi
           clientSecret: ${OAUTH2_PROXY_CLIENT_SECRET}
           oidcConfig:
             insecureAllowUnverifiedEmail: true

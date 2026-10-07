@@ -1,1 +1,5 @@
-{% if "nexus" in athena_services and git_platform == "github.com"%}{{instrument}}-nexus{% endif %}
+{% if git_platform == "github.com" -%}
+{% for inst in instrument_configs | selectattr("nexus") -%}
+{{ inst.name }}-nexus
+{% endfor -%}
+{% endif -%}

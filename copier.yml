@@ -102,7 +102,11 @@ gateway:
     {{ location.startswith('bl') }}
   
 athena_services:
-  help: Athena services to be included in this repository. Leave blank if not applicable.
+  help: |
+    Athena services to be included in this repository. Leave blank if not applicable.
+
+       These (and the three questions that follow) are the defaults for every
+       instrument; the "instruments" question can override them per instrument.
   default: []
   type: str
   multiselect: true
@@ -132,21 +136,84 @@ tiled_enabled:
   when: >-
     {{ auth_enabled }}
 
-instrument:
-  type: str
+# Replaces the single 'instrument' question. On 'copier update' of a repo made
+# before this question existed, its old 'instrument' answer is still in the
+# answers file and seeds the default, so the existing services are kept.
+instruments:
+  type: yaml
+  multiline: true
   help: |
-    A short name, which is used in the "NXInstrument" in produced NeXus files (if enabled)
-      and as a prefix for the names of services to ensure uniqueness.
-      Typically we use the instrument short name.
-      e.g. "i22", "b16", "i03-1", "SWIFT"
+    A YAML list of the instruments (beamlines or endstations) to deploy Athena services for.
+
+       Each name is used in the "NXInstrument" in produced NeXus files (if enabled)
+       and as a prefix for the names of services to ensure uniqueness.
+       Typically we use the instrument short name, e.g. "i22", "b16", "i03-1", "SWIFT".
+
+       An entry is either a name, which gets the services and settings answered above,
+       or a mapping with a "name" plus any of "athena_services", "auth_enabled",
+       "numtracker_enabled" and "tiled_enabled" to override them for that instrument.
+       e.g. [i15, i15-1]
+            [i10, {name: i10-1, athena_services: [blueapi], auth_enabled: false}]
+
+       The first instrument keeps the unprefixed secret names (blueapi-secret,
+       rabbitmq-secrets); the others prefix them with the instrument name so that
+       they do not clash in the shared namespace.
   default: >-
-    {{ domain }}
+    {{ [instrument if instrument is defined else domain] | tojson }}
   validator: >-
-    {% if not (instrument | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
-    {{instrument}} must be alphanumeric plus hyphens and start with a letter.
-    {% endif %}
+    {%- set keys = ["name", "athena_services", "auth_enabled", "numtracker_enabled", "tiled_enabled"] -%}
+    {%- if instruments is string or instruments is mapping or instruments is not iterable -%}
+    instruments must be a list, e.g. [{{ domain }}]
+    {%- elif instruments | length == 0 -%}
+    instruments must name at least one instrument
+    {%- else -%}
+    {%- set ns = namespace(names=[]) -%}
+    {%- for item in instruments -%}
+    {%- set name = item.get("name") if item is mapping else item -%}
+    {%- if not (name is string and name | regex_search('^[a-zA-Z][a-zA-Z-0-9]+$')) %}
+    instrument name {{ name }} must be alphanumeric plus hyphens and start with a letter.
+    {%- endif -%}
+    {%- if name in ns.names %}
+    instrument {{ name }} is listed more than once.
+    {%- endif -%}
+    {%- set ns.names = ns.names + [name] -%}
+    {%- if item is mapping -%}
+    {%- for key in item if key not in keys %}
+    instrument {{ name }}: unknown key {{ key }}, expected one of {{ keys | join(", ") }}.
+    {%- endfor -%}
+    {%- for service in item.get("athena_services", []) if service not in ["rabbitmq", "blueapi", "nexus"] %}
+    instrument {{ name }}: unknown Athena service {{ service }}.
+    {%- endfor -%}
+    {%- endif -%}
+    {%- endfor -%}
+    {%- endif -%}
   when: >-
     {{ athena_services != [] }}
+
+# Computed, never asked or stored: one mapping per instrument with the
+# overrides from 'instruments' applied over the defaults above, plus a flag per
+# service for the templates' '{% yield inst %}' folder names to select on.
+instrument_configs:
+  type: yaml
+  when: false
+  default: >-
+    {%- set ns = namespace(out=[]) -%}
+    {%- for item in (instruments if athena_services != [] else []) -%}
+    {%- set cfg = item if item is mapping else {"name": item} -%}
+    {%- set services = cfg.get("athena_services", athena_services) -%}
+    {%- set auth = "blueapi" in services and cfg.get("auth_enabled", auth_enabled) -%}
+    {%- set ns.out = ns.out + [{
+      "name": cfg.name,
+      "rabbitmq": "rabbitmq" in services,
+      "blueapi": "blueapi" in services,
+      "nexus": "nexus" in services,
+      "auth_enabled": auth,
+      "numtracker_enabled": auth and cfg.get("numtracker_enabled", numtracker_enabled),
+      "tiled_enabled": auth and cfg.get("tiled_enabled", tiled_enabled),
+      "secret_prefix": "" if loop.first else cfg.name ~ "-",
+    }] -%}
+    {%- endfor -%}
+    {{ ns.out | tojson }}
 
 logging_url:
   type: str

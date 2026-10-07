@@ -51,17 +51,13 @@
 {% endif -%}
 /services/{{ domain }}-epics-opis/
 /services/{{ domain }}-epics-pvcs/
-{% if athena_services %}
+{% if instrument_configs %}
 {{ hdr }}[Data Acquisition]
-{% if "blueapi" in athena_services -%}
-/services/{{ instrument }}-blueapi/
-{% endif -%}
-{% if "nexus" in athena_services -%}
-/services/{{ instrument }}-nexus/
-{% endif -%}
-{% if "rabbitmq" in athena_services -%}
-/services/{{ instrument }}-rabbitmq/
-{% endif -%}
+{% for inst in instrument_configs -%}
+{% for service in ["blueapi", "nexus", "rabbitmq"] if inst[service] -%}
+/services/{{ inst.name }}-{{ service }}/
+{% endfor -%}
+{% endfor -%}
 {% endif %}
 {{ hdr }}[Tech UI]
 /services/{{ location }}-synoptic/

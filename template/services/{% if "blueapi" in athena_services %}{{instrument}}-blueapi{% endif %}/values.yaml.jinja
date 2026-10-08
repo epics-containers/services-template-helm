@@ -38,7 +38,7 @@ blueapi:
       metadata:
         instrument: {{ instrument }}
       sources:
-      - kind: dodal
+      - kind: deviceManager
         module: dodal.beamlines.{{ instrument | replace('-', '_') }}
       - kind: planFunctions
         module: dodal.plans

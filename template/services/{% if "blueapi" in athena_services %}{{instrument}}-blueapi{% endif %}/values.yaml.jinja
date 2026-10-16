@@ -108,6 +108,9 @@ oauth2:
       "GET=^/config/oidc",
       "GET=^/healthz"
       ]
+      api_routes=[
+      "^/api/v1/"
+      ]
       whitelist_domains=["identity.diamond.ac.uk"]
   ingress:
     enabled: true

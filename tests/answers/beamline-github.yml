@@ -1,0 +1,7 @@
+# test beamline on GitHub with every Athena service
+domain: t01
+location: bl01t
+cluster_name: pollux
+cluster_namespace: t01-beamline
+git_platform: github.com
+athena_services: [rabbitmq, blueapi, nexus]

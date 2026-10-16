@@ -1,0 +1,11 @@
+# branch beamline (hyphenated domain) on GitLab with authenticated BlueAPI
+domain: i13-1
+location: bl13j
+cluster_name: k8s-i13-1
+cluster_namespace: i13-1-beamline
+git_platform: gitlab.diamond.ac.uk
+dls_technical_area: beamline
+athena_services: [blueapi]
+auth_enabled: true
+numtracker_enabled: true
+tiled_enabled: true

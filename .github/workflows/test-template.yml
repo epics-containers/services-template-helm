@@ -1,0 +1,32 @@
+name: Test template
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  render:
+    # render the template with each answers file and run the generated CI
+    # avoid running twice for same-repo PRs (push already covers them)
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        answers:
+          - beamline-github
+          - beamline-gitlab
+          - accelerator-gitlab
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          # copier reads the template version from the latest tag
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.2.0
+
+      - name: Render and verify
+        run: bash tests/test_template.sh tests/answers/${{ matrix.answers }}.yml

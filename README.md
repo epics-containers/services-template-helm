@@ -32,6 +32,14 @@ cd into the project you wish to update and execute the following:
 copier update .
 ```
 
+## Testing the template
+
+`tests/test_template.sh tests/answers/<name>.yml` renders the template from
+this checkout with one answers file from `tests/answers/`, then runs the
+generated repo's own `ci_verify.sh` (pre-commit plus helm lint/template of each
+service). It needs `uv`, and docker or podman for the helm step. The
+`Test template` GitHub workflow runs it for every answers file.
+
 # To tag a new version of the services repo
 ```
 git tag 2024.8.1

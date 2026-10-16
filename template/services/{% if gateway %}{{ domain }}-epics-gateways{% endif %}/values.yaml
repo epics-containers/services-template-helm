@@ -6,3 +6,11 @@ epics-gateways:
   securityContext:
     runAsUser: REPLACE_WITH_ID
     runAsGroup: REPLACE_WITH_ID
+
+  # hostNetwork: false
+
+  # on a cluster with hostNetwork: false, the gateways can't find IOCs added
+  # after they started by broadcast, so restart them whenever an IOC service
+  # is created in the namespace. A restarted IOC keeps its service and needs
+  # no restart.
+  # restartOnNewIocs: true

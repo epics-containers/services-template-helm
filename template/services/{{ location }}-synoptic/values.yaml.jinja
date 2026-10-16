@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=../../.helm-shared/values.schema.json
+
+ioc-instance:
+  # use a lightweight IOC because epics-base has no ioc.dbd or start.sh
+  image: ghcr.io/epics-containers/ioc-asyn-runtime:4.45ec3
+
+  rebootEveryCommit: true
+
+  # writable scratch space for the init container: HOME is /tmp, so git config,
+  # the synoptic clone and uv's Python, cache and tools all live here. It lasts
+  # for the lifetime of the Pod, so init container retries reuse the cache.
+  volumes:
+    - name: init-home
+      emptyDir: {}
+
+  volumeMounts:
+    - mountPath: /opis
+      name: opis-volume
+      readOnly: true
+    - mountPath: /tmp
+      name: init-home
+
+  initContainers:
+    - name: generate-synoptic-extras
+      # this image already contains git and uv, so nothing is installed at
+      # runtime (the init container runs with the service's non-root
+      # securityContext, so apt-get cannot be used)
+      image: ghcr.io/diamondlightsource/ubuntu-devcontainer:resolute-20260811.1
+      command:
+        - sh
+        - -c
+      args:
+        - |
+          set -xe
+          git --version
+          uv --version
+          git config --global --add safe.directory /tmp/synoptic-git
+          if ! [ -d /tmp/synoptic-git ]; then
+            git clone $ARGOCD_SOURCE_REPO /tmp/synoptic-git
+          fi
+          cd /tmp/synoptic-git
+          git fetch
+          git checkout $ARGOCD_COMMIT_HASH
+          git submodule update --init
+          rm -rf /epics/opi/*
+          cp -r /tmp/synoptic-git/synoptic/* /epics/opi
+          cd /opis/{{ location }}-synoptic
+          uvx --constraints /tmp/synoptic-git/requirements.txt techui-builder generate-jsonmap index.bob --output /epics/opi
+          uvx --constraints /tmp/synoptic-git/requirements.txt techui-builder status techui.yaml --output /epics/opi
+
+  # don't use the ioc-instance livenesProbe, preStop which dont exist in fastcs image.
+  livenessExecutable: ""
+  preStopExecutable: ""

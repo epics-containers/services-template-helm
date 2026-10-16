@@ -106,7 +106,9 @@ oauth2:
       email_domains = [ "*" ]
       skip_auth_routes=[
       "GET=^/config/oidc",
-      "GET=^/healthz",
+      "GET=^/healthz"
+      ]
+      api_routes=[
       "^/api/v1/"
       ]
       whitelist_domains=["identity.diamond.ac.uk"]

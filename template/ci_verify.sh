@@ -307,9 +307,9 @@ do
 
     ### Validate each ioc config ###
     # Skip if subfolder has no config to validate
-    if [ ! -f "${service}/config/ioc.yaml" ]; then
-        continue
-    fi
+   if [[ ! -f "${service}/config/ioc.yaml" && ! -f "${service}/config/fastcs.yaml" ]]; then
+       continue
+   fi
 
     # pick_ioc_image.py prints the IOC container image from values.yaml (an
     # ioc-instance.image at any depth, else the only image in the file), or

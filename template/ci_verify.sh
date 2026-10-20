@@ -349,7 +349,10 @@ do
                 echo 'start.sh has no --test support; falling back to ibek runtime generate2'
                 # avoid issues with auto-gen genicam pvi files on the fallback
                 # path (ioc-adaravis only) -- start.sh --test handles this itself
-                sed -i s/AutoADGenICam/ADGenICam/ /epics/ioc/config/ioc.yaml
+                # but only if there is an ioc.yaml including AutoADGenICam
+                if grep -q AutoADGenICam /epics/ioc/config/ioc.yaml 2>/dev/null; then
+                    sed -i s/AutoADGenICam/ADGenICam/ /epics/ioc/config/ioc.yaml
+                fi
                 timeout --kill-after=10s 60s ibek runtime generate2 /epics/ioc/config
             fi &&
             cat /epics/runtime/st.cmd

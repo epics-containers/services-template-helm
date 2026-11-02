@@ -1,6 +1,10 @@
 # {{ description }}
 
-This repository holds the a definition of {{ domain}} IOC Instances and services. Each sub folder of the `services` directory contains a helm chart for a specific service or IOC. The corresponding deployments repo can be found at [https://gitlab.diamond.ac.uk/controls/containers/beamline/{{ domain }}-deployment].
+This repository holds the a definition of {{ domain}} IOC Instances and services. Each sub folder of the `services` directory contains a helm chart for a specific service or IOC. The corresponding deployments repo can be found at {% if git_platform == "github.com" -%}
+[{{ domain }}-deployment](https://github.com/epics-containers/{{ domain }}-deployment).
+{%- else -%}
+[{{ domain }}-deployment](https://gitlab.diamond.ac.uk/controls/containers/{{ dls_technical_area }}/{{ domain }}-deployment).
+{%- endif %}
 
 ## Using pre-commit hooks
 

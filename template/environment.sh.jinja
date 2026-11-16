@@ -36,6 +36,13 @@ fi
 # enable shell completion for ec commands
 source <(ec --show-completion ${SHELL})
 
+# environment modules exist only inside DLS: elsewhere the module commands
+# in section 3 do nothing, and kubectl uses its current context
+if ! command -v module > /dev/null 2>&1; then
+    module() { :; }
+    EC_NO_MODULE=true
+fi
+
 
 #### SECTION 3. Configure Kubernetes Cluster ###################################
 
@@ -52,5 +59,7 @@ kubectl version
 
 # enable shell completion for k8s tools
 if [ -n "$ZSH_VERSION" ]; then SHELL=zsh; fi
+# drop the no-op module command that section 2 defines outside DLS
+if [ -n "${EC_NO_MODULE}" ]; then unset -f module; unset EC_NO_MODULE; fi
 source <(helm completion $(basename ${SHELL}))
 source <(kubectl completion $(basename ${SHELL}))

@@ -17,7 +17,11 @@ export EC_CLI_BACKEND="K8S"
 # the namespace to use for kubernetes deployments
 export EC_TARGET={{ cluster_namespace }}
 # the git repo for this project
-export EC_SERVICES_REPO={{ repo_uri }}
+{% if git_platform == 'gitlab.diamond.ac.uk' -%}
+export EC_SERVICES_REPO=https://{{ git_platform }}/controls/containers/{{ dls_technical_area }}/{{ domain }}-services
+{% else -%}
+export EC_SERVICES_REPO=https://{{ git_platform }}/{{ github_org }}/{{ domain }}-services
+{% endif -%}
 # declare your centralised log server Web UI
 export EC_LOG_URL="{{ logging_url }}"
 
@@ -35,7 +39,7 @@ source <(ec --show-completion ${SHELL})
 
 #### SECTION 3. Configure Kubernetes Cluster ###################################
 
-{% if cluster_type == "dls_cluster" %}
+
 # the following configures kubernetes inside DLS.
 
 module unload {{ cluster_name }} > /dev/null
@@ -44,9 +48,7 @@ module load {{ cluster_name }} > /dev/null
 kubectl config set-context --current --namespace={{ cluster_namespace }}
 # make sure the user has provided credentials
 kubectl version
-{% else %}
-# TODO add commands here to enable kubectl to connect to the cluster
-{% endif %}
+
 
 # enable shell completion for k8s tools
 if [ -n "$ZSH_VERSION" ]; then SHELL=zsh; fi

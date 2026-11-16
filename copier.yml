@@ -83,6 +83,17 @@ git_platform:
     - github.com
     - gitlab.diamond.ac.uk
 
+github_org:
+  type: str
+  help: The GitHub organisation that holds this repository.
+  default: epics-containers
+  when: >-
+    {{ git_platform == 'github.com' }}
+  validator: >-
+    {% if not (github_org | regex_search('^[a-zA-Z0-9][a-zA-Z0-9-]*$')) %}
+    {{github_org}} must be alphanumeric plus hyphens and not start with a hyphen.
+    {% endif %}
+
 dls_technical_area:
   type: str
   help: The DLS gitlab subfolder for this repo.

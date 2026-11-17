@@ -61,6 +61,6 @@ kubectl version
 # enable shell completion for k8s tools
 if [ -n "$ZSH_VERSION" ]; then SHELL=zsh; fi
 # drop the no-op module command that section 2 defines outside DLS
-if [ -n "${_ec_no_module}" ]; then unset -f module; unset _ec_no_module; fi
+if [ -n "${_ec_no_module:-}" ]; then unset -f module; unset _ec_no_module; fi
 source <(helm completion $(basename ${SHELL}))
 source <(kubectl completion $(basename ${SHELL}))

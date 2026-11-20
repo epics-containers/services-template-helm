@@ -1,8 +1,9 @@
 # yaml-language-server: $schema=../../.helm-shared/values.schema.json
 
 ioc-instance:
-  # use a lightweight IOC because epics-base has no ioc.dbd or start.sh
-  image: ghcr.io/epics-containers/ioc-asyn-runtime:4.45ec3
+  # a generic IOC with only general support modules, because epics-base has no
+  # ioc.dbd or start.sh
+  image: ghcr.io/epics-containers/ioc-generic-runtime:2026.11.2
 
   rebootEveryCommit: true
 
@@ -48,6 +49,7 @@ ioc-instance:
           uvx --constraints /tmp/synoptic-git/requirements.txt techui-builder generate-jsonmap index.bob --output /epics/opi
           uvx --constraints /tmp/synoptic-git/requirements.txt techui-builder status techui.yaml --output /epics/opi
 
-  # don't use the ioc-instance livenesProbe, preStop which dont exist in fastcs image.
+  # no liveness probe: the image's liveness.sh checks the devIocStats
+  # <prefix>:UPTIME PV, which this IOC does not load. The image's default
+  # preStop (/epics/ioc/stop.sh) is used.
   livenessExecutable: ""
-  preStopExecutable: ""
